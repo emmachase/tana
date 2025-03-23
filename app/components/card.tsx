@@ -1,9 +1,9 @@
 import React, { type FC, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Skeleton } from "~/components/skeleton";
 import { motion, useAnimation } from "motion/react";
 import { disableScroll, enableScroll } from "~/lib/scroll";
 import { cn } from "~/lib/utils";
+import { Skeleton } from "./ui/skeleton";
 
 const Backdrop: FC<{
   in: boolean;
@@ -220,7 +220,9 @@ export const Card: FC<{
         }}
       >
         {renderContent()}
-        {<Skeleton fading={imLoaded} />}
+        {!imLoaded && (
+          <Skeleton className="absolute top-0 left-0 h-full w-full" />
+        )}
       </div>
       {(isExpanded || isClosing) &&
         portalRoot &&

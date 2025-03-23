@@ -1,15 +1,14 @@
 import { useTRPC } from "~/lib/trpc";
 import type { Route } from "./+types/home";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { prefetch } from "~/lib/prefetch";
 import { Card, CardContentType } from "~/components/card";
-import { useState } from "react";
-import { AutoSizer, InfiniteLoader, Grid, type Size } from "react-virtualized";
+import { useState, useRef, useEffect } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 const CARD_WIDTH = 200;
 const CARD_HEIGHT = 200;
 const LOAD_BATCH_SIZE = 50;
-const VIRTUAL_LIST_SIZE = 1000000;
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", href: "/favicon.svg" },
@@ -27,7 +26,12 @@ export const unstable_middleware: Route.unstable_MiddlewareFunction[] = [
     const { queryClient, trpc } = prefetch(context);
 
     // Block the page to prefetch
-    await queryClient.prefetchQuery(trpc.hero.message.queryOptions());
+    await queryClient.prefetchInfiniteQuery(
+      trpc.list.infiniteQueryOptions({
+        gallery: true,
+        limit: LOAD_BATCH_SIZE,
+      }),
+    );
 
     // Or, if you don't want to block the page:
     // void queryClient.prefetchQuery(trpc.hero.message.queryOptions());
@@ -41,6 +45,8 @@ export const unstable_middleware: Route.unstable_MiddlewareFunction[] = [
 
 function Gallery() {
   const trpc = useTRPC();
+  const parentRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
 
   const {
     data: uploads,
@@ -60,152 +66,161 @@ function Gallery() {
     ),
   );
 
-  const [maxRequestedIndex, setMaxRequestedIndex] = useState(0);
-
-  // const [images, setImages] = useState<ImageModel[]>([]);
-
-  // const fetchData = async (startIndex: number, stopIndex: number) => {
-  //   const newImages = await imageManager.current.fetchData(
-  //     startIndex,
-  //     stopIndex,
-  //   );
-  //   setImages([...newImages]);
-  // };
-
   const flatUploads = uploads?.pages.flatMap((page) => page || []) ?? [];
-
-  const isRowLoaded = ({ index }: { index: number }) => {
-    return Boolean(flatUploads[index]);
-  };
-
-  const cellRenderer =
-    (numColumns: number) =>
-    ({
-      columnIndex,
-      key,
-      rowIndex,
-      style,
-    }: {
-      columnIndex: number;
-      key: string;
-      rowIndex: number;
-      style: React.CSSProperties;
-    }) => {
-      const idx = rowIndex * numColumns + columnIndex;
-
-      // Show skeleton card if we're beyond loaded images
-      if (idx >= flatUploads.length) {
-        if (!hasNextPage) {
-          return null; // No more images to load
-        }
-
-        return (
-          <div
-            key={key}
-            className="flex items-center justify-center"
-            style={style}
-          >
-            <Card />
-          </div>
-        );
-      }
-
-      const image = flatUploads[idx];
-      return (
-        <div
-          key={key}
-          className="flex items-center justify-center"
-          style={style}
-        >
-          <Card
-            key={image.name ?? idx}
-            url={image.name}
-            type={
-              image.mime.startsWith("video")
-                ? CardContentType.VIDEO
-                : CardContentType.IMAGE
-            }
-          />
-        </div>
-      );
-    };
 
   const getNumColumns = (width: number) =>
     Math.max(1, Math.floor(width / CARD_WIDTH));
 
-  const getColumnWidth = (width: number, numColumns: number) => {
-    return width / numColumns;
-  };
+  const numColumns = getNumColumns(size.width);
 
-  const getNumRows = (numColumns: number) => {
-    if (!hasNextPage) {
-      return Math.ceil(flatUploads.length / numColumns);
+  // Calculate row count based on our data and columns
+  const rowCount = Math.ceil(
+    (hasNextPage ? flatUploads.length + LOAD_BATCH_SIZE : flatUploads.length) /
+      numColumns,
+  );
+
+  // Create our virtualizer
+  const rowVirtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => CARD_HEIGHT,
+    overscan: 5,
+  });
+
+  // Set up a resize observer to update dimensions
+  useEffect(() => {
+    if (!parentRef.current) return;
+
+    // Set initial size immediately
+    const { width, height } = parentRef.current.getBoundingClientRect();
+    setSize({ width, height });
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      setSize({ width, height });
+    });
+
+    resizeObserver.observe(parentRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  // Load more when we reach the threshold
+  useEffect(() => {
+    const lastVisibleItemIndex = rowVirtualizer.range?.endIndex
+      ? rowVirtualizer.range.endIndex * numColumns
+      : 0;
+
+    if (
+      hasNextPage &&
+      lastVisibleItemIndex >= flatUploads.length - numColumns * 2
+    ) {
+      fetchNextPage();
+    }
+  }, [
+    fetchNextPage,
+    hasNextPage,
+    flatUploads.length,
+    numColumns,
+    rowVirtualizer.range,
+  ]);
+
+  // Render a grid cell
+  const renderGridCell = (rowIndex: number, columnIndex: number) => {
+    const idx = rowIndex * numColumns + columnIndex;
+
+    // Show skeleton card if we're beyond loaded images
+    if (idx >= flatUploads.length) {
+      if (!hasNextPage) {
+        return null; // No more images to load
+      }
+
+      return (
+        <div className="flex items-center justify-center">
+          <Card />
+        </div>
+      );
     }
 
-    // Calculate actual rows needed for current data plus one batch
-    return Math.ceil((maxRequestedIndex + LOAD_BATCH_SIZE) / numColumns);
+    const image = flatUploads[idx];
+    return (
+      <div className="flex items-center justify-center">
+        <Card
+          key={image.name ?? idx}
+          url={image.name}
+          type={
+            image.mime.startsWith("video")
+              ? CardContentType.VIDEO
+              : CardContentType.IMAGE
+          }
+        />
+      </div>
+    );
   };
 
   return (
-    <div className="max-w-1000px px-safe m-auto w-full flex-1">
-      <AutoSizer>
-        {({ width, height }: Size) => {
-          const numColumns = getNumColumns(width);
-          const columnWidth = getColumnWidth(width, numColumns);
-          const numRows = getNumRows(numColumns);
+    <div
+      ref={parentRef}
+      className="max-w-1000px px-safe m-auto w-full flex-1 overflow-auto"
+      style={{ maxHeight: "calc(100vh - 80px)" }}
+      tabIndex={-1}
+    >
+      <div
+        style={{
+          height: `${rowVirtualizer.getTotalSize()}px`,
+          width: "100%",
+          position: "relative",
+        }}
+      >
+        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+          const rowIndex = virtualRow.index;
 
           return (
-            <InfiniteLoader
-              isRowLoaded={isRowLoaded}
-              loadMoreRows={({ stopIndex }) => {
-                setMaxRequestedIndex(stopIndex);
-                return fetchNextPage();
+            <div
+              key={virtualRow.key}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: `${virtualRow.size}px`,
+                transform: `translateY(${virtualRow.start}px)`,
+                display: "flex",
               }}
-              rowCount={VIRTUAL_LIST_SIZE}
-              minimumBatchSize={LOAD_BATCH_SIZE}
-              threshold={10}
             >
-              {({ onRowsRendered, registerChild }) => (
-                <Grid
-                  ref={registerChild}
-                  cellRenderer={cellRenderer(numColumns)}
-                  columnCount={numColumns}
-                  columnWidth={columnWidth}
-                  height={height}
-                  rowCount={numRows}
-                  rowHeight={CARD_HEIGHT}
-                  width={width}
-                  onSectionRendered={({
-                    rowStartIndex,
-                    rowStopIndex,
-                    columnStartIndex,
-                    columnStopIndex,
-                  }) => {
-                    onRowsRendered({
-                      startIndex: rowStartIndex * numColumns + columnStartIndex,
-                      stopIndex: rowStopIndex * numColumns + columnStopIndex,
-                    });
-                  }}
-                />
-              )}
-            </InfiniteLoader>
+              {Array.from({ length: numColumns }).map((_, columnIndex) => {
+                // Calculate the column width as a percentage
+                const columnWidth = `${100 / numColumns}%`;
+
+                return (
+                  <div
+                    key={`${rowIndex}-${columnIndex}`}
+                    style={{
+                      width: columnWidth,
+                      height: CARD_HEIGHT,
+                      padding: "8px",
+                    }}
+                  >
+                    {renderGridCell(rowIndex, columnIndex)}
+                  </div>
+                );
+              })}
+            </div>
           );
-        }}
-      </AutoSizer>
+        })}
+      </div>
     </div>
   );
 }
 
 export default function Home() {
-  const trpc = useTRPC();
-  const message = useQuery(trpc.hero.message.queryOptions());
+  // const message = useQuery(trpc.hero.message.queryOptions());
 
   return (
     <main className="flex min-h-dvh flex-col items-center p-4 pb-0">
       <h1 className="text-4xl">Jebsite</h1>
-      <p className="animate-shimmer bg-gradient-to-r from-gray-500 via-gray-300 to-gray-500 bg-[size:200%_100%] bg-clip-text text-sm text-transparent">
+      {/* <p className="animate-shimmer bg-gradient-to-r from-gray-500 via-gray-300 to-gray-500 bg-[size:200%_100%] bg-clip-text text-sm text-transparent">
         {message.data}
-      </p>
+      </p> */}
       <Gallery />
       {/* <div className="grid grid-cols-3 gap-4">
         {uploads?.pages
