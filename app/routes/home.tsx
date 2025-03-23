@@ -106,6 +106,8 @@ function Gallery() {
 
   // Load more when we reach the threshold
   useEffect(() => {
+    if (size.width === 0) return; // Skip this effect during SSR
+
     const lastVisibleItemIndex = rowVirtualizer.range?.endIndex
       ? rowVirtualizer.range.endIndex * numColumns
       : 0;
@@ -122,6 +124,7 @@ function Gallery() {
     flatUploads.length,
     numColumns,
     rowVirtualizer.range,
+    size.width,
   ]);
 
   // Render a grid cell
@@ -135,7 +138,7 @@ function Gallery() {
       }
 
       return (
-        <div className="flex items-center justify-center">
+        <div className="flex h-full items-center justify-center">
           <Card />
         </div>
       );
@@ -143,7 +146,7 @@ function Gallery() {
 
     const image = flatUploads[idx];
     return (
-      <div className="flex items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <Card
           key={image.name ?? idx}
           url={image.name}
@@ -157,6 +160,45 @@ function Gallery() {
     );
   };
 
+  // Render a CSS Grid for SSR
+  const renderCSSGrid = () => {
+    return (
+      <div
+        className="grid w-full"
+        style={{
+          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+          gridAutoRows: "200px",
+        }}
+      >
+        {flatUploads.map((image, idx) => (
+          <div
+            key={image.name ?? idx}
+            className="flex items-center justify-center"
+          >
+            <Card
+              url={image.name}
+              type={
+                image.mime.startsWith("video")
+                  ? CardContentType.VIDEO
+                  : CardContentType.IMAGE
+              }
+            />
+          </div>
+        ))}
+        {hasNextPage &&
+          // Add skeleton cards for loading state
+          Array.from({ length: 4 }).map((_, idx) => (
+            <div
+              key={`skeleton-${idx}`}
+              className="flex items-center justify-center"
+            >
+              <Card />
+            </div>
+          ))}
+      </div>
+    );
+  };
+
   return (
     <div
       ref={parentRef}
@@ -164,50 +206,56 @@ function Gallery() {
       style={{ maxHeight: "calc(100vh - 80px)" }}
       tabIndex={-1}
     >
-      <div
-        style={{
-          height: `${rowVirtualizer.getTotalSize()}px`,
-          width: "100%",
-          position: "relative",
-        }}
-      >
-        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-          const rowIndex = virtualRow.index;
+      {size.width === 0 ? (
+        // Use CSS Grid during SSR and initial client render
+        renderCSSGrid()
+      ) : (
+        // Use virtualization once we have container size
+        <div
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            width: "100%",
+            position: "relative",
+          }}
+        >
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            const rowIndex = virtualRow.index;
 
-          return (
-            <div
-              key={virtualRow.key}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: `${virtualRow.size}px`,
-                transform: `translateY(${virtualRow.start}px)`,
-                display: "flex",
-              }}
-            >
-              {Array.from({ length: numColumns }).map((_, columnIndex) => {
-                // Calculate the column width as a percentage
-                const columnWidth = `${100 / numColumns}%`;
+            return (
+              <div
+                key={virtualRow.key}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: `${virtualRow.size}px`,
+                  transform: `translateY(${virtualRow.start}px)`,
+                  display: "flex",
+                }}
+              >
+                {Array.from({ length: numColumns }).map((_, columnIndex) => {
+                  // Calculate the column width as a percentage
+                  const columnWidth = `${100 / numColumns}%`;
 
-                return (
-                  <div
-                    key={`${rowIndex}-${columnIndex}`}
-                    style={{
-                      width: columnWidth,
-                      height: CARD_HEIGHT,
-                      padding: "8px",
-                    }}
-                  >
-                    {renderGridCell(rowIndex, columnIndex)}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
+                  return (
+                    <div
+                      key={`${rowIndex}-${columnIndex}`}
+                      style={{
+                        width: columnWidth,
+                        height: CARD_HEIGHT,
+                        padding: "8px",
+                      }}
+                    >
+                      {renderGridCell(rowIndex, columnIndex)}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
