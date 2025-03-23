@@ -64,9 +64,9 @@ function Gallery(props: React.ComponentProps<"div">) {
       {
         gallery: true,
         limit: LOAD_BATCH_SIZE,
-        cursor: initData?.initialCursor,
       },
       {
+        initialCursor: initData?.initialCursor,
         getNextPageParam: (lastPage) => {
           return lastPage.nextCursor;
         },
