@@ -1,10 +1,12 @@
-export function createContext({ req }: { req: Request }) {
+import { getSession } from "~/sessions.server";
+
+export async function createContext({ req }: { req: Request }) {
   // As an example, you can retrieve auth or other information here.
-  // const user = { name: req.headers.get("username") ?? "anonymous" };
+  const session = await getSession(req.headers.get("cookie"));
 
   return {
     req,
-    // user,
+    session,
   };
 }
 
