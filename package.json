@@ -12,6 +12,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.1.2",
     "@react-router/node": "^7.3.0",
     "@tanstack/react-query": "^5.68.0",
     "@tanstack/react-virtual": "^3.13.4",

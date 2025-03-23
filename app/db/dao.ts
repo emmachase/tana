@@ -15,7 +15,7 @@ export function getSecret(type: SecretType) {
   if (!result) {
     // Generate a new secret
     const newSecret = crypto.randomBytes(32).toString("hex");
-    db.insert(secret).values({ key: type, value: newSecret });
+    db.insert(secret).values({ key: type, value: newSecret }).execute();
     cachedSecrets.set(type, newSecret);
     return newSecret;
   }

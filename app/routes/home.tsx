@@ -3,8 +3,14 @@ import type { Route } from "./+types/home";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { prefetch } from "~/lib/prefetch";
 import { Card, CardContentType } from "~/components/card";
-import { useState, useRef, useEffect } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useRef, useEffect } from "react";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
+import { useSize } from "~/hooks/useSize";
+import { useScrollState } from "~/hooks/useScrollState";
+import { cn } from "~/lib/utils";
+import { Logo } from "~/components/logo";
+import { Button } from "~/components/ui/button";
+import { useNavigate } from "react-router";
 
 const CARD_WIDTH = 200;
 const CARD_HEIGHT = 200;
@@ -32,21 +38,13 @@ export const unstable_middleware: Route.unstable_MiddlewareFunction[] = [
         limit: LOAD_BATCH_SIZE,
       }),
     );
-
-    // Or, if you don't want to block the page:
-    // void queryClient.prefetchQuery(trpc.hero.message.queryOptions());
-
-    // If you need to prevent internal navigations from causing prefetching, use skipIfSameOrigin
-    // await skipIfSameOrigin(request, async () => {
-    //   await queryClient.prefetchQuery(trpc.hero.message.queryOptions());
-    // });
   },
 ];
 
-function Gallery() {
+function Gallery(props: React.ComponentProps<"div">) {
   const trpc = useTRPC();
-  const parentRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 0, height: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { width } = useSize(containerRef);
 
   const {
     data: uploads,
@@ -71,7 +69,7 @@ function Gallery() {
   const getNumColumns = (width: number) =>
     Math.max(1, Math.floor(width / CARD_WIDTH));
 
-  const numColumns = getNumColumns(size.width);
+  const numColumns = getNumColumns(width);
 
   // Calculate row count based on our data and columns
   const rowCount = Math.ceil(
@@ -80,33 +78,16 @@ function Gallery() {
   );
 
   // Create our virtualizer
-  const rowVirtualizer = useVirtualizer({
+  const rowVirtualizer = useWindowVirtualizer({
     count: rowCount,
-    getScrollElement: () => parentRef.current,
+    // getScrollElement: () => parentRef.current,
     estimateSize: () => CARD_HEIGHT,
     overscan: 5,
   });
 
-  // Set up a resize observer to update dimensions
-  useEffect(() => {
-    if (!parentRef.current) return;
-
-    // Set initial size immediately
-    const { width, height } = parentRef.current.getBoundingClientRect();
-    setSize({ width, height });
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      const { width, height } = entries[0].contentRect;
-      setSize({ width, height });
-    });
-
-    resizeObserver.observe(parentRef.current);
-    return () => resizeObserver.disconnect();
-  }, []);
-
   // Load more when we reach the threshold
   useEffect(() => {
-    if (size.width === 0) return; // Skip this effect during SSR
+    if (width === 0) return; // Skip this effect during SSR
 
     const lastVisibleItemIndex = rowVirtualizer.range?.endIndex
       ? rowVirtualizer.range.endIndex * numColumns
@@ -124,7 +105,7 @@ function Gallery() {
     flatUploads.length,
     numColumns,
     rowVirtualizer.range,
-    size.width,
+    width,
   ]);
 
   // Render a grid cell
@@ -164,9 +145,9 @@ function Gallery() {
   const renderCSSGrid = () => {
     return (
       <div
-        className="grid w-full"
+        className="grid w-full justify-between"
         style={{
-          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fill, 200px)",
           gridAutoRows: "200px",
         }}
       >
@@ -200,13 +181,8 @@ function Gallery() {
   };
 
   return (
-    <div
-      ref={parentRef}
-      className="max-w-1000px px-safe m-auto w-full flex-1 overflow-auto"
-      style={{ maxHeight: "calc(100vh - 80px)" }}
-      tabIndex={-1}
-    >
-      {size.width === 0 ? (
+    <div ref={containerRef} {...props}>
+      {width === 0 ? (
         // Use CSS Grid during SSR and initial client render
         renderCSSGrid()
       ) : (
@@ -224,25 +200,22 @@ function Gallery() {
             return (
               <div
                 key={virtualRow.key}
+                className="absolute top-0 left-0 flex w-full justify-between"
                 style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
                   height: `${virtualRow.size}px`,
                   transform: `translateY(${virtualRow.start}px)`,
-                  display: "flex",
                 }}
               >
                 {Array.from({ length: numColumns }).map((_, columnIndex) => {
                   // Calculate the column width as a percentage
-                  const columnWidth = `${100 / numColumns}%`;
+                  // const columnWidth = `${100 / numColumns}%`;
 
                   return (
                     <div
                       key={`${rowIndex}-${columnIndex}`}
+                      className="aspect-square"
                       style={{
-                        width: columnWidth,
+                        // width: columnWidth,
                         height: CARD_HEIGHT,
                         padding: "8px",
                       }}
@@ -260,34 +233,54 @@ function Gallery() {
   );
 }
 
-export default function Home() {
-  // const message = useQuery(trpc.hero.message.queryOptions());
+function Header({ className, ...props }: React.ComponentProps<"div">) {
+  const navigate = useNavigate();
+  const scrolled = useScrollState();
 
   return (
-    <main className="flex min-h-dvh flex-col items-center p-4 pb-0">
-      <h1 className="text-4xl">Jebsite</h1>
-      {/* <p className="animate-shimmer bg-gradient-to-r from-gray-500 via-gray-300 to-gray-500 bg-[size:200%_100%] bg-clip-text text-sm text-transparent">
-        {message.data}
-      </p> */}
-      <Gallery />
-      {/* <div className="grid grid-cols-3 gap-4">
-        {uploads?.pages
-          .flatMap((page) => page || [])
-          .map((upload) => (
-            <div key={upload.id}>
-              <div className="flex flex-col gap-2">
-                <div className="aspect-square overflow-hidden rounded-md">
-                  <img
-                    src={`/${upload.name}`}
-                    alt={upload.name}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <div className="text-sm">{upload.name}</div>
-              </div>
-            </div>
-          ))}
-      </div> */}
+    <div
+      className={cn("sticky top-0 z-10 flex self-stretch p-4", className)}
+      {...props}
+    >
+      <div
+        className={cn(
+          "flex flex-1 items-center rounded-xl border p-4 transition-[background,border] duration-300",
+          scrolled
+            ? "bg-popover/50 border-border/50 backdrop-blur-sm"
+            : "border-transparent bg-transparent",
+        )}
+      >
+        <Logo className="h-12 w-auto" />
+
+        <div className="flex-1" />
+
+        <Button
+          variant="ghostPrimary"
+          onClick={() => {
+            navigate("/logout");
+          }}
+        >
+          Logout
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export default function Home() {
+  const scrolled = useScrollState();
+
+  return (
+    <main className="p-4 py-0">
+      <div className="">
+        <Header
+          className={cn(
+            "m-auto transition-[max-width]",
+            scrolled ? "max-w-full" : "max-w-[1000px]",
+          )}
+        />
+        <Gallery className="m-auto max-w-[1000px]" />
+      </div>
     </main>
   );
 }

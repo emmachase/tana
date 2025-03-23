@@ -236,7 +236,7 @@ export const Card: FC<{
               )}
               style={{
                 position: "fixed",
-                zIndex: 1000,
+                zIndex: isClosing ? 0 : 1000,
               }}
               initial={initialValues}
               animate={controls}
