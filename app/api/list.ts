@@ -1,7 +1,7 @@
 import { authedProcedure } from "./trpc";
 import { db } from "~/db";
 import { upload, tag } from "~/db/schema";
-import { desc, eq, like, or, and, lte } from "drizzle-orm";
+import { desc, eq, like, or, and, lte, sql } from "drizzle-orm";
 import * as v from "valibot";
 
 const DEFAULT_LIMIT = 30;
@@ -36,48 +36,31 @@ export const list = authedProcedure("list")
           ? like(upload.mime, `%${input.mfilter}%`)
           : undefined;
 
-    const results = await db
-      .select()
-      .from(
-        db
-          .select()
-          .from(upload)
-          .where(and(whereCursor, where))
-          .orderBy(desc(upload.id))
-          .limit(limit + 1)
-          .as("upload"),
-      )
-      .leftJoin(tag, eq(upload.id, tag.uploadId));
+    const query = db
+      .select({
+        upload,
+        tags: sql<string>`group_concat(${tag.value})`.as("tags"),
+      })
+      .from(upload)
+      .where(and(whereCursor, where))
+      .orderBy(desc(upload.id))
+      .leftJoin(tag, eq(upload.id, tag.uploadId))
+      .groupBy(upload.id)
+      .limit(limit + 1);
 
-    // Group tags by upload
-    const uploadsWithTags = Object.values(
-      results.reduce<
-        Record<number, typeof upload.$inferSelect & { tags: string[] }>
-      >((acc, row) => {
-        const upload = row.upload;
-        if (!acc[upload.id]) {
-          acc[upload.id] = {
-            ...upload,
-            tags: [],
-          };
-        }
-
-        if (row.tag) {
-          acc[upload.id].tags.push(row.tag.value);
-        }
-
-        return acc;
-      }, {}),
-    ).sort((a, b) => b.id - a.id);
+    const results = query.all().map((row) => ({
+      ...row.upload,
+      tags: row.tags?.split(","),
+    }));
 
     let nextCursor: number | undefined;
-    const hasMore = uploadsWithTags.length > limit;
+    const hasMore = results.length > limit;
     if (hasMore) {
-      nextCursor = uploadsWithTags.pop()?.id;
+      nextCursor = results.pop()?.id;
     }
 
     return {
-      items: uploadsWithTags,
+      items: results,
       nextCursor,
     };
   });
