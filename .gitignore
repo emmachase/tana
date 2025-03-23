@@ -1,10 +1,11 @@
+.env
 .DS_Store
 /node_modules/
+/images/
 
 # React Router
 /.react-router/
 /build/
 
 # Drizzle
-.env
 database.sqlite
