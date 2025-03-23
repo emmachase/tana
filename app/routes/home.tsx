@@ -1,6 +1,6 @@
 import { useTRPC } from "~/lib/trpc";
 import type { Route } from "./+types/home";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { prefetch } from "~/lib/prefetch";
 import { Card, CardContentType } from "~/components/card";
 import { useRef, useEffect } from "react";
@@ -14,7 +14,7 @@ import { useNavigate } from "react-router";
 
 const CARD_WIDTH = 200;
 const CARD_HEIGHT = 200;
-const LOAD_BATCH_SIZE = 5;
+const LOAD_BATCH_SIZE = 50;
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", href: "/favicon.svg" },
@@ -31,11 +31,18 @@ export const unstable_middleware: Route.unstable_MiddlewareFunction[] = [
   async ({ context }) => {
     const { queryClient, trpc } = prefetch(context);
 
+    const { initialCursor } = await queryClient.fetchQuery(
+      trpc.list.init.queryOptions({
+        gallery: true,
+      }),
+    );
+
     // Block the page to prefetch
     await queryClient.prefetchInfiniteQuery(
-      trpc.list.infiniteQueryOptions({
+      trpc.list.getPage.infiniteQueryOptions({
         gallery: true,
         limit: LOAD_BATCH_SIZE,
+        cursor: initialCursor,
       }),
     );
   },
@@ -46,11 +53,18 @@ function Gallery(props: React.ComponentProps<"div">) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { width } = useSize(containerRef);
 
+  const { data: initData } = useQuery(
+    trpc.list.init.queryOptions({
+      gallery: true,
+    }),
+  );
+
   const { data, fetchNextPage, hasNextPage } = useInfiniteQuery(
-    trpc.list.infiniteQueryOptions(
+    trpc.list.getPage.infiniteQueryOptions(
       {
         gallery: true,
         limit: LOAD_BATCH_SIZE,
+        cursor: initData?.initialCursor,
       },
       {
         getNextPageParam: (lastPage) => {
@@ -59,6 +73,8 @@ function Gallery(props: React.ComponentProps<"div">) {
       },
     ),
   );
+
+  console.log(initData?.itemCount);
 
   const flatData = data?.pages.flatMap((page) => page.items) ?? [];
 
@@ -69,8 +85,10 @@ function Gallery(props: React.ComponentProps<"div">) {
 
   // Calculate row count based on our data and columns
   const rowCount = Math.ceil(
-    (hasNextPage ? flatData.length + LOAD_BATCH_SIZE : flatData.length) /
-      numColumns,
+    initData
+      ? initData.itemCount / numColumns
+      : (hasNextPage ? flatData.length + LOAD_BATCH_SIZE : flatData.length) /
+          numColumns,
   );
 
   // Create our virtualizer
@@ -110,7 +128,8 @@ function Gallery(props: React.ComponentProps<"div">) {
 
     // Show skeleton card if we're beyond loaded images
     if (idx >= flatData.length) {
-      if (!hasNextPage) {
+      const maxIdx = initData ? initData.itemCount : Infinity;
+      if (!hasNextPage || idx >= maxIdx) {
         return null; // No more images to load
       }
 
