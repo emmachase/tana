@@ -2,7 +2,7 @@ import { createCookieSessionStorage } from "react-router";
 import { getSecret } from "./db/dao";
 
 type SessionData = {
-  userId: string;
+  authed: boolean;
 };
 
 type SessionFlashData = {
@@ -18,7 +18,7 @@ const { getSession, commitSession, destroySession } =
       maxAge: 60 * 60 * 24,
       path: "/",
       sameSite: "lax",
-      secrets: [getSecret()],
+      secrets: [getSecret("session")],
       secure: true,
     },
   });

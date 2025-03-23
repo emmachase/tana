@@ -11,6 +11,7 @@ import type { Route } from "./+types/root";
 import "~/app.css";
 import { Providers } from "~/components/providers";
 import {
+  authMiddleware,
   queryClientContext,
   queryClientMiddleware,
   trpcMiddleware,
@@ -35,7 +36,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export const unstable_middleware = [queryClientMiddleware, trpcMiddleware];
+export const unstable_middleware = [
+  authMiddleware,
+  queryClientMiddleware,
+  trpcMiddleware,
+];
 
 export function loader({ context }: Route.LoaderArgs) {
   const queryClient = context.get(queryClientContext);

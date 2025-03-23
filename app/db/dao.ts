@@ -1,18 +1,25 @@
 import { db } from "~/db";
 import { secret } from "./schema";
 import { eq } from "drizzle-orm";
+import crypto from "crypto";
 
-let cachedSecret: string | undefined = undefined;
-export function getSecret() {
-  if (cachedSecret) {
-    return cachedSecret;
+type SecretType = "session" | "JWT";
+
+const cachedSecrets = new Map<SecretType, string>();
+export function getSecret(type: SecretType) {
+  if (cachedSecrets.has(type)) {
+    return cachedSecrets.get(type)!;
   }
 
-  const result = db.select().from(secret).where(eq(secret.key, "secret")).get();
+  const result = db.select().from(secret).where(eq(secret.key, type)).get();
   if (!result) {
-    throw new Error("Secret not found");
+    // Generate a new secret
+    const newSecret = crypto.randomBytes(32).toString("hex");
+    db.insert(secret).values({ key: type, value: newSecret });
+    cachedSecrets.set(type, newSecret);
+    return newSecret;
   }
 
-  cachedSecret = result.value;
-  return cachedSecret;
+  cachedSecrets.set(type, result.value);
+  return result.value;
 }

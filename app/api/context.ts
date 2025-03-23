@@ -1,12 +1,15 @@
-import { getSession } from "~/sessions.server";
+import { type AuthScope } from "./auth";
 
-export async function createContext({ req }: { req: Request }) {
-  // As an example, you can retrieve auth or other information here.
-  const session = await getSession(req.headers.get("cookie"));
-
+export async function createContext({
+  req,
+  scopes,
+}: {
+  req: Request;
+  scopes: AuthScope[];
+}) {
   return {
     req,
-    session,
+    scopes,
   };
 }
 

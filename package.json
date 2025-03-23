@@ -1,5 +1,5 @@
 {
-  "name": "jebsite-template",
+  "name": "tana",
   "private": true,
   "type": "module",
   "scripts": {
@@ -22,13 +22,15 @@
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.41.0",
     "isbot": "^5.1.23",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.482.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router": "^7.3.0",
     "react-router-hono-server": "^2.11.0",
     "tailwind-merge": "^3.0.2",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "valibot": "^1.0.0"
   },
   "devDependencies": {
     "@babel/preset-typescript": "^7.26.0",
@@ -36,6 +38,7 @@
     "@react-router/dev": "^7.3.0",
     "@tailwindcss/vite": "^4.0.14",
     "@types/better-sqlite3": "^7.6.12",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^20.17.24",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
@@ -61,5 +64,15 @@
       "eslint --fix"
     ]
   },
-  "packageManager": "pnpm@10.6.3+sha512.bb45e34d50a9a76e858a95837301bfb6bd6d35aea2c5d52094fa497a467c43f5c440103ce2511e9e0a2f89c3d6071baac3358fc68ac6fb75e2ceb3d2736065e6"
+  "packageManager": "pnpm@10.6.3+sha512.bb45e34d50a9a76e858a95837301bfb6bd6d35aea2c5d52094fa497a467c43f5c440103ce2511e9e0a2f89c3d6071baac3358fc68ac6fb75e2ceb3d2736065e6",
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ],
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
+  }
 }
