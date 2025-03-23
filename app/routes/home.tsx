@@ -14,7 +14,7 @@ import { useNavigate } from "react-router";
 
 const CARD_WIDTH = 200;
 const CARD_HEIGHT = 200;
-const LOAD_BATCH_SIZE = 50;
+const LOAD_BATCH_SIZE = 5;
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", href: "/favicon.svg" },
@@ -46,11 +46,7 @@ function Gallery(props: React.ComponentProps<"div">) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { width } = useSize(containerRef);
 
-  const {
-    data: uploads,
-    fetchNextPage,
-    hasNextPage,
-  } = useInfiniteQuery(
+  const { data, fetchNextPage, hasNextPage } = useInfiniteQuery(
     trpc.list.infiniteQueryOptions(
       {
         gallery: true,
@@ -58,13 +54,13 @@ function Gallery(props: React.ComponentProps<"div">) {
       },
       {
         getNextPageParam: (lastPage) => {
-          return lastPage[lastPage.length - 1]?.id;
+          return lastPage.nextCursor;
         },
       },
     ),
   );
 
-  const flatUploads = uploads?.pages.flatMap((page) => page || []) ?? [];
+  const flatData = data?.pages.flatMap((page) => page.items) ?? [];
 
   const getNumColumns = (width: number) =>
     Math.max(1, Math.floor(width / CARD_WIDTH));
@@ -73,7 +69,7 @@ function Gallery(props: React.ComponentProps<"div">) {
 
   // Calculate row count based on our data and columns
   const rowCount = Math.ceil(
-    (hasNextPage ? flatUploads.length + LOAD_BATCH_SIZE : flatUploads.length) /
+    (hasNextPage ? flatData.length + LOAD_BATCH_SIZE : flatData.length) /
       numColumns,
   );
 
@@ -95,14 +91,14 @@ function Gallery(props: React.ComponentProps<"div">) {
 
     if (
       hasNextPage &&
-      lastVisibleItemIndex >= flatUploads.length - numColumns * 2
+      lastVisibleItemIndex >= flatData.length - numColumns * 2
     ) {
       fetchNextPage();
     }
   }, [
     fetchNextPage,
     hasNextPage,
-    flatUploads.length,
+    flatData.length,
     numColumns,
     rowVirtualizer.range,
     width,
@@ -113,7 +109,7 @@ function Gallery(props: React.ComponentProps<"div">) {
     const idx = rowIndex * numColumns + columnIndex;
 
     // Show skeleton card if we're beyond loaded images
-    if (idx >= flatUploads.length) {
+    if (idx >= flatData.length) {
       if (!hasNextPage) {
         return null; // No more images to load
       }
@@ -125,7 +121,7 @@ function Gallery(props: React.ComponentProps<"div">) {
       );
     }
 
-    const image = flatUploads[idx];
+    const image = flatData[idx];
     return (
       <div className="flex h-full items-center justify-center">
         <Card
@@ -151,7 +147,7 @@ function Gallery(props: React.ComponentProps<"div">) {
           gridAutoRows: "200px",
         }}
       >
-        {flatUploads.map((image, idx) => (
+        {flatData.map((image, idx) => (
           <div
             key={image.name ?? idx}
             className="flex items-center justify-center"

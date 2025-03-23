@@ -38,34 +38,50 @@ export const list = authedProcedure("list")
 
     const results = await db
       .select()
-      .from(upload)
-      .leftJoin(tag, eq(upload.id, tag.uploadId))
-      .where(and(whereCursor, where))
-      .orderBy(desc(upload.id))
-      .limit(limit + 1); // +1 to check if there are more results
+      .from(
+        db
+          .select()
+          .from(upload)
+          .where(and(whereCursor, where))
+          .orderBy(desc(upload.id))
+          .limit(limit + 1)
+          .as("upload"),
+      )
+      .leftJoin(tag, eq(upload.id, tag.uploadId));
 
     // Group tags by upload
-    const uploadsWithTags = results.reduce<
-      Record<number, typeof upload.$inferSelect & { tags: string[] }>
-    >((acc, row) => {
-      const upload = row.upload;
-      if (!acc[upload.id]) {
-        acc[upload.id] = {
-          ...upload,
-          tags: [],
-        };
-      }
+    const uploadsWithTags = Object.values(
+      results.reduce<
+        Record<number, typeof upload.$inferSelect & { tags: string[] }>
+      >((acc, row) => {
+        const upload = row.upload;
+        if (!acc[upload.id]) {
+          acc[upload.id] = {
+            ...upload,
+            tags: [],
+          };
+        }
 
-      if (row.tag) {
-        acc[upload.id].tags.push(row.tag.value);
-      }
+        if (row.tag) {
+          acc[upload.id].tags.push(row.tag.value);
+        }
 
-      return acc;
-    }, {});
+        return acc;
+      }, {}),
+    ).sort((a, b) => b.id - a.id);
 
-    return Object.values(uploadsWithTags).sort((a, b) => b.id - a.id);
+    let nextCursor: number | undefined;
+    const hasMore = uploadsWithTags.length > limit;
+    if (hasMore) {
+      nextCursor = uploadsWithTags.pop()?.id;
+    }
+
+    return {
+      items: uploadsWithTags,
+      nextCursor,
+    };
   });
 
 export type ListResponse = Awaited<ReturnType<typeof list>>;
 
-export type ObjectModel = ListResponse[number];
+export type ObjectModel = ListResponse["items"][number];
