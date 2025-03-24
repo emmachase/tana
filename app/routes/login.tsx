@@ -4,6 +4,9 @@ import type { ActionFunctionArgs } from "react-router";
 import type { Route } from "./+types/login";
 import { env } from "~/env";
 import { Logo } from "~/components/logo";
+import { verifyPassword } from "~/lib/crypto";
+import * as v from "valibot";
+import { cn } from "~/lib/utils";
 
 type ActionData = { error?: string; success?: boolean };
 
@@ -13,9 +16,9 @@ export function meta({}: Route.MetaArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
-  const password = formData.get("password");
+  const password = v.parse(v.string(), formData.get("password"));
 
-  if (!password || password !== env.ADMIN_PASSWORD) {
+  if (!password || !(await verifyPassword(password, env.ADMIN_PASSWORD))) {
     return new Response(JSON.stringify({ error: "Invalid password" }), {
       status: 400,
       headers: {
@@ -85,15 +88,16 @@ export default function Login() {
                   name="password"
                   type="password"
                   required
-                  className="border-input mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  className={cn(
+                    "border-input mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none",
+                    actionData?.error &&
+                      "border-red-500 focus:border-red-500 focus:ring-red-500",
+                  )}
                   placeholder="Enter your password"
                   data-1p-ignore
                   data-op-ignore
                 />
               </div>
-              {actionData?.error && (
-                <div className="text-sm text-red-600">{actionData.error}</div>
-              )}
               <button
                 type="submit"
                 disabled={isSubmitting}
