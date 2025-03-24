@@ -2,6 +2,7 @@ import { Form, redirect, useActionData, useNavigation } from "react-router";
 import { commitSession, getSession } from "~/sessions.server";
 import type { ActionFunctionArgs } from "react-router";
 import type { Route } from "./+types/login";
+import { env } from "~/env";
 
 type ActionData = { error?: string; success?: boolean };
 
@@ -9,7 +10,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const password = formData.get("password");
 
-  if (!password || password !== process.env.ADMIN_PASSWORD) {
+  if (!password || password !== env.ADMIN_PASSWORD) {
     return new Response(JSON.stringify({ error: "Invalid password" }), {
       status: 400,
       headers: {
