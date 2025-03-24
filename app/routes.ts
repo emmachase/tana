@@ -10,6 +10,7 @@ export default [
     layout("routes/auth-layout.tsx", [
       index("routes/home.tsx"),
       route("/upload", "routes/upload.tsx"),
+      route("/list", "routes/list.tsx"),
     ]),
     route("/login", "routes/login.tsx"),
     route("/logout", "routes/logout.tsx"),

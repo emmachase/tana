@@ -6,18 +6,44 @@ import * as v from "valibot";
 
 const DEFAULT_LIMIT = 30;
 
+// Common input schema parts
+const filterSchema = v.intersect([
+  v.union([
+    v.object({
+      mfilter: v.string(),
+    }),
+    v.object({
+      gallery: v.literal(true),
+    }),
+    v.object({}),
+  ]),
+  v.object({
+    name: v.optional(v.string()),
+  }),
+]);
+
+// Helper function to build filter conditions
+const buildFilterConditions = (input: v.InferOutput<typeof filterSchema>) => {
+  const { name } = input;
+  let baseWhere = name ? like(upload.name, `%${name}%`) : undefined;
+
+  if ("gallery" in input && input.gallery) {
+    const galleryFilter = or(
+      like(upload.mime, "image/%"),
+      like(upload.mime, "video/%"),
+    );
+    baseWhere = baseWhere ? and(baseWhere, galleryFilter) : galleryFilter;
+  } else if ("mfilter" in input && input.mfilter) {
+    const mimeFilter = like(upload.mime, `%${input.mfilter}%`);
+    baseWhere = baseWhere ? and(baseWhere, mimeFilter) : mimeFilter;
+  }
+
+  return baseWhere;
+};
+
 export const list = router({
   init: authedProcedure("list")
-    .input(
-      v.union([
-        v.object({
-          mfilter: v.optional(v.string()),
-        }),
-        v.object({
-          gallery: v.optional(v.boolean()),
-        }),
-      ]),
-    )
+    .input(filterSchema)
     .output(
       v.object({
         itemCount: v.number(),
@@ -25,17 +51,12 @@ export const list = router({
       }),
     )
     .query(async ({ input }) => {
-      const where =
-        "gallery" in input
-          ? or(like(upload.mime, "%image%"), like(upload.mime, "%video%"))
-          : "mfilter" in input
-            ? like(upload.mime, `%${input.mfilter}%`)
-            : undefined;
+      const baseWhere = buildFilterConditions(input);
 
       const first = db
         .select()
         .from(upload)
-        .where(where)
+        .where(baseWhere)
         .orderBy(desc(upload.id))
         .limit(1)
         .get();
@@ -51,7 +72,7 @@ export const list = router({
         db
           .select({ count: count() })
           .from(upload)
-          .where(and(lte(upload.id, first.id), where))
+          .where(and(lte(upload.id, first.id), baseWhere))
           .get()?.count ?? 0;
 
       return {
@@ -63,14 +84,7 @@ export const list = router({
   getPage: authedProcedure("list")
     .input(
       v.intersect([
-        v.union([
-          v.object({
-            mfilter: v.optional(v.string()),
-          }),
-          v.object({
-            gallery: v.optional(v.boolean()),
-          }),
-        ]),
+        filterSchema,
         v.object({
           cursor: v.optional(v.number()),
           limit: v.optional(v.number()),
@@ -80,15 +94,8 @@ export const list = router({
     .query(async ({ input }) => {
       const limit = input.limit ?? DEFAULT_LIMIT;
       const { cursor } = input;
-
+      const baseWhere = buildFilterConditions(input);
       const whereCursor = cursor ? lte(upload.id, cursor) : undefined;
-
-      const where =
-        "gallery" in input
-          ? or(like(upload.mime, "%image%"), like(upload.mime, "%video%"))
-          : "mfilter" in input
-            ? like(upload.mime, `%${input.mfilter}%`)
-            : undefined;
 
       const query = db
         .select({
@@ -96,7 +103,7 @@ export const list = router({
           tags: sql<string>`group_concat(${tag.value})`.as("tags"),
         })
         .from(upload)
-        .where(and(whereCursor, where))
+        .where(and(whereCursor, baseWhere))
         .orderBy(desc(upload.id))
         .leftJoin(tag, eq(upload.id, tag.uploadId))
         .groupBy(upload.id)

@@ -18,6 +18,7 @@ export function Header({
   className,
   navItems = [
     { label: "Gallery", href: "/" },
+    { label: "List", href: "/list" },
     { label: "Upload", href: "/upload" },
   ],
   ...props

@@ -17,8 +17,8 @@ export const links: Route.LinksFunction = () => [
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Upload - Jebsite" },
-    { name: "description", content: "Upload images to Jebsite" },
+    { title: "Upload - Emmages" },
+    { name: "description", content: "Upload images to Emmages" },
   ];
 }
 

@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "~/db";
-import { tag, upload } from "~/db/schema";
+import { tag as tagTable, upload as uploadTable } from "~/db/schema";
 import { pickTemplateName } from "./naming";
 import { authedProcedure } from "./trpc";
 import * as v from "valibot";
@@ -28,7 +28,9 @@ async function generateName(template: string, ext: string) {
     }
 
     name = (await pickTemplateName(template)) + ext;
-  } while (db.select().from(upload).where(eq(upload.name, name)).get());
+  } while (
+    db.select().from(uploadTable).where(eq(uploadTable.name, name)).get()
+  );
 
   return name;
 }
@@ -49,7 +51,7 @@ async function parseFormData(input: FormData) {
   return object;
 }
 
-export const uploadMutation = authedProcedure("upload")
+export const upload = authedProcedure("upload")
   .input(
     v.pipeAsync(
       v.instance(FormData),
@@ -76,30 +78,10 @@ export const uploadMutation = authedProcedure("upload")
     Readable.fromWeb(file.stream() as ReadableStream<unknown>).pipe(
       writeStream,
     );
-    // await new Promise((resolve, reject) => {
-    //   file
-    //     .stream()
-    //     .pipeTo(
-    //       new WritableStream({
-    //         write(chunk) {
-    //           writeStream.write(chunk);
-    //         },
-    //         close() {
-    //           writeStream.end();
-    //           resolve(undefined);
-    //         },
-    //         abort(err) {
-    //           writeStream.destroy();
-    //           reject(err);
-    //         },
-    //       }),
-    //     )
-    //     .catch(reject);
-    // });
 
     // Insert into database
     const uploadRecord = db
-      .insert(upload)
+      .insert(uploadTable)
       .values({
         name,
         description,
@@ -116,7 +98,7 @@ export const uploadMutation = authedProcedure("upload")
         value: tagName,
       }));
 
-      db.insert(tag).values(tagValues).run();
+      db.insert(tagTable).values(tagValues).run();
     }
 
     return {

@@ -18,8 +18,8 @@ export const links: Route.LinksFunction = () => [
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Jebsite" },
-    { name: "description", content: "Welcome to my Jebsite!" },
+    { title: "Emmages" },
+    { name: "description", content: "Welcome to Emmages!" },
   ];
 }
 
@@ -264,7 +264,7 @@ export default function Home() {
             scrolled ? "max-w-full" : "max-w-[1000px]",
           )}
         />
-        <Gallery className="m-auto max-w-[1000px]" />
+        <Gallery className="m-auto max-w-[1200px]" />
       </div>
     </main>
   );
