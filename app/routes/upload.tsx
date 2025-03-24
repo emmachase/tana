@@ -11,10 +11,6 @@ import { useScrollState } from "~/hooks/useScrollState";
 import { Header } from "~/components/header";
 import { X } from "lucide-react";
 
-export const links: Route.LinksFunction = () => [
-  { rel: "icon", href: "/favicon.svg" },
-];
-
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Upload - Emmages" },

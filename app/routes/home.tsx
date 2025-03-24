@@ -12,15 +12,8 @@ import { Header } from "~/components/header";
 
 const LOAD_BATCH_SIZE = 200;
 
-export const links: Route.LinksFunction = () => [
-  { rel: "icon", href: "/favicon.svg" },
-];
-
 export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "Emmages" },
-    { name: "description", content: "Welcome to Emmages!" },
-  ];
+  return [{ title: "Emmages - Gallery" }];
 }
 
 export const unstable_middleware: Route.unstable_MiddlewareFunction[] = [
@@ -83,8 +76,6 @@ function Gallery(props: React.ComponentProps<"div">) {
       },
     ),
   );
-
-  console.log(initData?.itemCount);
 
   const flatData = data?.pages.flatMap((page) => page.items) ?? [];
 

@@ -18,6 +18,16 @@ import {
 } from "~/lib/prefetch";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
+export const links: Route.LinksFunction = () => [
+  { rel: "icon", href: "/favicon.ico" },
+  { rel: "icon", href: "/favicon.png" },
+  { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+];
+
+export function meta({}: Route.MetaArgs) {
+  return [{ title: "Emmages" }];
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">

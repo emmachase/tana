@@ -13,10 +13,6 @@ import { useDebounce } from "~/hooks/useDebounce";
 
 const LOAD_BATCH_SIZE = 50;
 
-export const links: Route.LinksFunction = () => [
-  { rel: "icon", href: "/favicon.svg" },
-];
-
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "File List - Emmages" },

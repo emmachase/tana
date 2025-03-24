@@ -9,7 +9,8 @@
     "typecheck": "react-router typegen && tsc",
     "format": "prettier --write --ignore-unknown .",
     "lint": "eslint --fix",
-    "prepare": "husky"
+    "prepare": "husky",
+    "favicon": "node scripts/convert-favicon.js"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.2",
