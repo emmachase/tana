@@ -10,10 +10,11 @@ import { mkdir } from "fs/promises";
 import { createWriteStream } from "fs";
 import { ReadableStream } from "stream/web";
 import { Readable } from "stream";
+import { randomString36 } from "~/lib/crypto";
 
 function directoryDiscriminator() {
   const date = new Date();
-  return `./${date.getUTCFullYear()}-${date.getUTCMonth()}`;
+  return `./images/${date.getUTCFullYear()}-${date.getUTCMonth()}`;
 }
 
 const RETRIES = 20;
@@ -69,10 +70,14 @@ export const upload = authedProcedure("upload")
 
     // Create directory if it doesn't exist
     const directory = directoryDiscriminator();
-    await mkdir(path.join(env.UPLOAD_DIR, directory), { recursive: true });
+    await mkdir(path.join(env.ROOT_DIR, directory), { recursive: true });
 
     // Save the file
-    const filePath = path.join(env.UPLOAD_DIR, directory, name);
+    const filePath = path.join(
+      env.ROOT_DIR,
+      directory,
+      `${await randomString36()}.${name}`,
+    );
 
     const writeStream = createWriteStream(filePath);
     Readable.fromWeb(file.stream() as ReadableStream<unknown>).pipe(
@@ -104,6 +109,6 @@ export const upload = authedProcedure("upload")
     return {
       id: uploadRecord.id,
       name,
-      url: `/api/files/${name}`,
+      url: `/${name}`,
     };
   });

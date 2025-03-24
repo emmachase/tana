@@ -136,7 +136,6 @@ export const Card: FC<{
       if (cardRef.current) {
         // queueMicrotask(() => {
         const rect = cardRef.current!.getBoundingClientRect();
-        console.log(rect.top, rect.left, rect.width, rect.height);
         // First animate from the card's current position
         setInitialValues({
           top: rect.top,

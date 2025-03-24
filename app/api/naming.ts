@@ -1,5 +1,13 @@
-import { readFile } from "fs/promises";
+// import { readFile } from "fs/promises";
 import { randomString36 } from "~/lib/crypto";
+
+import nounsFile from "~/assets/nouns.txt?raw";
+import adjectivesFile from "~/assets/adjectives.txt?raw";
+
+const files = {
+  nouns: nounsFile,
+  adjectives: adjectivesFile,
+} as Record<string, string>;
 
 class TemplateError extends Error {}
 
@@ -7,8 +15,9 @@ const fileCache: Record<string, string[]> = {};
 async function getListFile(name: string): Promise<string[]> {
   if (fileCache[name]) return fileCache[name];
 
-  const file = await readFile(name);
-  const contents = file.toString("ascii");
+  const contents = files[name];
+  if (!contents) throw new TemplateError(`invalid file '${name}'`);
+
   const lines = contents.split("\n");
 
   return (fileCache[name] = lines);

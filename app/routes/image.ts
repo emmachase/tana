@@ -4,6 +4,8 @@ import { eq } from "drizzle-orm";
 import sharp from "sharp";
 import { readFile } from "fs/promises";
 import type { Route } from "./+types/image";
+import path from "path";
+import { env } from "~/env";
 
 const CACHE_SIZE = 50;
 let rollingCache: {
@@ -64,8 +66,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     // Result vars
     let data: Buffer;
 
+    const filePath = path.join(env.ROOT_DIR, file.filePath);
+
     if (file.mime.startsWith("image")) {
-      const image = sharp(file.filePath);
+      const image = sharp(filePath);
       if (thumbSize) {
         const meta = await image.metadata();
         const sizer =
@@ -82,7 +86,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
         insertIntoCache(filename, null, data, file.mime);
       }
     } else {
-      data = await readFile(file.filePath);
+      data = await readFile(filePath);
     }
 
     return new Response(data, {
