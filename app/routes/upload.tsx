@@ -7,8 +7,8 @@ import { Textarea } from "~/components/ui/textarea";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { cn } from "~/lib/utils";
-import { Logo } from "~/components/logo";
 import { useScrollState } from "~/hooks/useScrollState";
+import { Header } from "~/components/header";
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", href: "/favicon.svg" },
@@ -19,48 +19,6 @@ export function meta({}: Route.MetaArgs) {
     { title: "Upload - Jebsite" },
     { name: "description", content: "Upload images to Jebsite" },
   ];
-}
-
-function Header({ className, ...props }: React.ComponentProps<"div">) {
-  const navigate = useNavigate();
-  const scrolled = useScrollState();
-
-  return (
-    <div
-      className={cn("sticky top-0 z-10 flex self-stretch p-4", className)}
-      {...props}
-    >
-      <div
-        className={cn(
-          "flex flex-1 items-center rounded-xl border p-4 transition-[background,border] duration-300",
-          scrolled
-            ? "bg-popover/50 border-border/50 backdrop-blur-sm"
-            : "border-transparent bg-transparent",
-        )}
-      >
-        <Logo className="h-12 w-auto" />
-
-        <div className="flex-1" />
-
-        <Button
-          variant="outline"
-          onClick={() => navigate("/")}
-          className="mr-2"
-        >
-          Back to Gallery
-        </Button>
-
-        <Button
-          variant="ghostPrimary"
-          onClick={() => {
-            navigate("/logout");
-          }}
-        >
-          Logout
-        </Button>
-      </div>
-    </div>
-  );
 }
 
 export default function Upload() {

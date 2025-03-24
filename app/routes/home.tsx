@@ -8,9 +8,7 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { useIsMobile, useSize } from "~/hooks/useSize";
 import { useScrollState } from "~/hooks/useScrollState";
 import { cn } from "~/lib/utils";
-import { Logo } from "~/components/logo";
-import { Button } from "~/components/ui/button";
-import { useNavigate } from "react-router";
+import { Header } from "~/components/header";
 
 const LOAD_BATCH_SIZE = 200;
 
@@ -250,40 +248,6 @@ function Gallery(props: React.ComponentProps<"div">) {
           })}
         </div>
       )}
-    </div>
-  );
-}
-
-function Header({ className, ...props }: React.ComponentProps<"div">) {
-  const navigate = useNavigate();
-  const scrolled = useScrollState();
-
-  return (
-    <div
-      className={cn("sticky top-0 z-10 flex self-stretch p-4", className)}
-      {...props}
-    >
-      <div
-        className={cn(
-          "flex flex-1 items-center rounded-xl border p-4 transition-[background,border] duration-300",
-          scrolled
-            ? "bg-popover/50 border-border/50 backdrop-blur-sm"
-            : "border-transparent bg-transparent",
-        )}
-      >
-        <Logo className="h-12 w-auto" />
-
-        <div className="flex-1" />
-
-        <Button
-          variant="ghostPrimary"
-          onClick={() => {
-            navigate("/logout");
-          }}
-        >
-          Logout
-        </Button>
-      </div>
     </div>
   );
 }
