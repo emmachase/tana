@@ -4,11 +4,12 @@ import { useState, useRef } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, skipToken } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { cn } from "~/lib/utils";
 import { useScrollState } from "~/hooks/useScrollState";
 import { Header } from "~/components/header";
+import { X } from "lucide-react";
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", href: "/favicon.svg" },
@@ -32,8 +33,31 @@ export default function Upload() {
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+
+  // Check if file is previewable
+  const isPreviewable =
+    selectedFile &&
+    (selectedFile.type.startsWith("image/") ||
+      selectedFile.type.startsWith("video/")) &&
+    selectedFile.size <= 50 * 1024 * 1024; // Skip files over 50MB
+
+  // Preview URL query with proper skipToken implementation
+  const previewQuery = useQuery({
+    queryKey: ["filePreview", selectedFile?.name],
+    queryFn:
+      isPreviewable && selectedFile
+        ? async () => {
+            return new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                resolve(reader.result as string);
+              };
+              reader.readAsDataURL(selectedFile);
+            });
+          }
+        : skipToken,
+  });
 
   // Upload mutation
   const { mutate, isPending, isError, error } = useMutation(
@@ -59,13 +83,15 @@ export default function Upload() {
       const file = e.target.files[0];
       setSelectedFile(file);
       setFileName(file.name);
+    }
+  };
 
-      // Create preview for images or videos
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  // Clear file selection
+  const clearFileSelection = () => {
+    setSelectedFile(null);
+    setFileName("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -91,13 +117,6 @@ export default function Upload() {
       const file = e.dataTransfer.files[0];
       setSelectedFile(file);
       setFileName(file.name);
-
-      // Create preview for images or videos
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -162,7 +181,7 @@ export default function Upload() {
             <div className="lg:flex lg:min-h-[400px] lg:flex-col lg:justify-center">
               <div
                 className={cn(
-                  "flex h-full cursor-pointer flex-col justify-center rounded-lg border-2 border-dashed p-8 text-center transition-colors",
+                  "relative flex h-full cursor-pointer flex-col justify-center rounded-lg border-2 border-dashed p-8 text-center transition-colors",
                   dragActive
                     ? "border-primary bg-primary/5"
                     : "border-muted-foreground/30 hover:border-primary/50",
@@ -182,30 +201,59 @@ export default function Upload() {
                   accept="image/*,video/*"
                 />
 
-                {previewUrl ? (
+                {selectedFile && (
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground bg-background/80 hover:bg-background absolute top-2 right-2 z-10 rounded-full p-1 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearFileSelection();
+                    }}
+                  >
+                    <X className="size-5" />
+                  </button>
+                )}
+
+                {previewQuery.data ? (
                   <div className="flex flex-col items-center">
                     {selectedFile?.type.startsWith("image/") ? (
                       <img
-                        src={previewUrl}
+                        src={previewQuery.data}
                         alt="Preview"
                         className="mb-4 max-h-[300px] rounded object-contain lg:max-h-[400px]"
                       />
                     ) : selectedFile?.type.startsWith("video/") ? (
                       <video
-                        src={previewUrl}
+                        src={previewQuery.data}
                         controls
                         className="mb-4 max-h-[300px] rounded object-contain lg:max-h-[400px]"
                       />
                     ) : null}
                     <p className="text-sm">{selectedFile?.name}</p>
+                    <p className="text-muted-foreground text-sm">
+                      {selectedFile?.type} -{" "}
+                      {selectedFile &&
+                        (selectedFile.size / 1024 / 1024).toFixed(2)}{" "}
+                      MB
+                    </p>
                   </div>
                 ) : selectedFile ? (
                   <div className="py-8">
-                    <p className="text-lg font-medium">{selectedFile.name}</p>
-                    <p className="text-muted-foreground text-sm">
-                      {selectedFile.type} -{" "}
-                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
+                    {isPreviewable && previewQuery.isLoading ? (
+                      <p className="text-muted-foreground">
+                        Loading preview...
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-lg font-medium">
+                          {selectedFile.name}
+                        </p>
+                        <p className="text-muted-foreground text-sm">
+                          {selectedFile.type} -{" "}
+                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="flex h-full flex-col items-center justify-center py-12 lg:py-24">
