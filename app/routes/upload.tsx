@@ -60,16 +60,12 @@ export default function Upload() {
       setSelectedFile(file);
       setFileName(file.name);
 
-      // Create preview for images
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPreviewUrl(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setPreviewUrl(null);
-      }
+      // Create preview for images or videos
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -96,16 +92,12 @@ export default function Upload() {
       setSelectedFile(file);
       setFileName(file.name);
 
-      // Create preview for images
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPreviewUrl(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setPreviewUrl(null);
-      }
+      // Create preview for images or videos
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -192,11 +184,19 @@ export default function Upload() {
 
                 {previewUrl ? (
                   <div className="flex flex-col items-center">
-                    <img
-                      src={previewUrl}
-                      alt="Preview"
-                      className="mb-4 max-h-[300px] rounded object-contain lg:max-h-[400px]"
-                    />
+                    {selectedFile?.type.startsWith("image/") ? (
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="mb-4 max-h-[300px] rounded object-contain lg:max-h-[400px]"
+                      />
+                    ) : selectedFile?.type.startsWith("video/") ? (
+                      <video
+                        src={previewUrl}
+                        controls
+                        className="mb-4 max-h-[300px] rounded object-contain lg:max-h-[400px]"
+                      />
+                    ) : null}
                     <p className="text-sm">{selectedFile?.name}</p>
                   </div>
                 ) : selectedFile ? (
