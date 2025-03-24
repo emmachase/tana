@@ -5,16 +5,14 @@ import { prefetch } from "~/lib/prefetch";
 import { Card, CardContentType } from "~/components/card";
 import { useRef, useEffect } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
-import { useSize } from "~/hooks/useSize";
+import { useIsMobile, useSize } from "~/hooks/useSize";
 import { useScrollState } from "~/hooks/useScrollState";
 import { cn } from "~/lib/utils";
 import { Logo } from "~/components/logo";
 import { Button } from "~/components/ui/button";
 import { useNavigate } from "react-router";
 
-const CARD_WIDTH = 200;
-const CARD_HEIGHT = 200;
-const LOAD_BATCH_SIZE = 50;
+const LOAD_BATCH_SIZE = 200;
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", href: "/favicon.svg" },
@@ -48,10 +46,24 @@ export const unstable_middleware: Route.unstable_MiddlewareFunction[] = [
   },
 ];
 
+const LG_CARD_WIDTH = 200;
+const LG_CARD_HEIGHT = 200;
+const LG_COLS_CLASS = "md:grid-cols-[repeat(auto-fill,200px)]";
+const LG_ROWS_CLASS = "md:auto-rows-[200px]";
+
+const SM_CARD_WIDTH = 100;
+const SM_CARD_HEIGHT = 100;
+const SM_COLS_CLASS = "grid-cols-[repeat(auto-fill,100px)]";
+const SM_ROWS_CLASS = "auto-rows-[100px]";
+
 function Gallery(props: React.ComponentProps<"div">) {
   const trpc = useTRPC();
   const containerRef = useRef<HTMLDivElement>(null);
   const { width } = useSize(containerRef);
+
+  const isMobile = useIsMobile();
+  const CARD_WIDTH = isMobile ? SM_CARD_WIDTH : LG_CARD_WIDTH;
+  const CARD_HEIGHT = isMobile ? SM_CARD_HEIGHT : LG_CARD_HEIGHT;
 
   const { data: initData } = useQuery(
     trpc.list.init.queryOptions({
@@ -78,10 +90,7 @@ function Gallery(props: React.ComponentProps<"div">) {
 
   const flatData = data?.pages.flatMap((page) => page.items) ?? [];
 
-  const getNumColumns = (width: number) =>
-    Math.max(1, Math.floor(width / CARD_WIDTH));
-
-  const numColumns = getNumColumns(width);
+  const numColumns = Math.max(1, Math.floor(width / CARD_WIDTH));
 
   // Calculate row count based on our data and columns
   const rowCount = Math.ceil(
@@ -160,11 +169,13 @@ function Gallery(props: React.ComponentProps<"div">) {
   const renderCSSGrid = () => {
     return (
       <div
-        className="grid w-full justify-between"
-        style={{
-          gridTemplateColumns: "repeat(auto-fill, 200px)",
-          gridAutoRows: "200px",
-        }}
+        className={cn(
+          "grid w-full justify-center",
+          SM_COLS_CLASS,
+          SM_ROWS_CLASS,
+          LG_COLS_CLASS,
+          LG_ROWS_CLASS,
+        )}
       >
         {flatData.map((image, idx) => (
           <div
@@ -215,24 +226,19 @@ function Gallery(props: React.ComponentProps<"div">) {
             return (
               <div
                 key={virtualRow.key}
-                className="absolute top-0 left-0 flex w-full justify-between"
+                className="absolute top-0 left-0 flex w-full justify-center"
                 style={{
                   height: `${virtualRow.size}px`,
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
                 {Array.from({ length: numColumns }).map((_, columnIndex) => {
-                  // Calculate the column width as a percentage
-                  // const columnWidth = `${100 / numColumns}%`;
-
                   return (
                     <div
                       key={`${rowIndex}-${columnIndex}`}
                       className="aspect-square"
                       style={{
-                        // width: columnWidth,
                         height: CARD_HEIGHT,
-                        padding: "8px",
                       }}
                     >
                       {renderGridCell(rowIndex, columnIndex)}
@@ -286,7 +292,7 @@ export default function Home() {
   const scrolled = useScrollState();
 
   return (
-    <main className="p-4 py-0">
+    <main className="py-0 sm:p-4">
       <div className="">
         <Header
           className={cn(

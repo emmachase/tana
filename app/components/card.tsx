@@ -177,7 +177,7 @@ export const Card: FC<{
   };
 
   const renderContent = (isExpanded = false) => (
-    <div className="relative h-full w-full overflow-hidden rounded-sm">
+    <div className="relative h-full w-full overflow-hidden md:rounded-sm">
       {props.type === CardContentType.VIDEO ? (
         <video
           {...(isExpanded ? expandedContentProps : contentProps)}
@@ -210,7 +210,7 @@ export const Card: FC<{
       <div
         ref={cardRef}
         className={cn(
-          "shadow-card hover:shadow-card-hover relative h-40 w-40 overflow-hidden rounded-xl transition-shadow duration-250",
+          "shadow-card hover:shadow-card-hover relative h-24 w-24 overflow-hidden transition-shadow duration-250 md:h-40 md:w-40 md:rounded-xl",
           imLoaded && props.url && "cursor-pointer",
         )}
         onClick={handleClick}
@@ -221,7 +221,7 @@ export const Card: FC<{
       >
         {renderContent()}
         {!imLoaded && (
-          <Skeleton className="absolute top-0 left-0 h-full w-full" />
+          <Skeleton className="absolute top-0 left-0 h-full w-full rounded-none" />
         )}
       </div>
       {(isExpanded || isClosing) &&
@@ -231,7 +231,7 @@ export const Card: FC<{
             <Backdrop in={!isClosing} onClick={handleClose} />
             <motion.div
               className={cn(
-                "overflow-hidden rounded-xl",
+                "overflow-hidden md:rounded-xl",
                 isClosing ? "" : "shadow-card-hover",
               )}
               style={{
