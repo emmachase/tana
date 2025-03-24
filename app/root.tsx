@@ -19,13 +19,13 @@ import {
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
 export const links: Route.LinksFunction = () => [
-  { rel: "icon", href: "/favicon.ico" },
   { rel: "icon", href: "/favicon.png" },
+  { rel: "shortcut icon", href: "/favicon.ico" },
   { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
 ];
 
 export function meta({}: Route.MetaArgs) {
-  return [{ title: "Emmages" }];
+  return [{ title: "tana" }];
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {

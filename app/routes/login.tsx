@@ -3,11 +3,12 @@ import { commitSession, getSession } from "~/sessions.server";
 import type { ActionFunctionArgs } from "react-router";
 import type { Route } from "./+types/login";
 import { env } from "~/env";
+import { Logo } from "~/components/logo";
 
 type ActionData = { error?: string; success?: boolean };
 
 export function meta({}: Route.MetaArgs) {
-  return [{ title: "Emmages - Login" }];
+  return [{ title: "tana - Login" }];
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -56,16 +57,20 @@ export default function Login() {
     <div className="bg-background flex h-screen w-screen">
       <div className="flex w-full flex-col md:flex-row">
         <div className="w-full md:w-1/2">
-          <img
-            src="/yukisame.png"
-            alt="Hero image"
-            className="h-64 w-full object-cover object-top md:h-full"
-          />
+          <div className="relative h-64 w-full pt-6 md:h-full md:pt-0">
+            <div className="from-background absolute right-0 bottom-0 left-0 h-24 bg-gradient-to-t to-transparent md:hidden"></div>
+            <img
+              src="/yukisame.png"
+              alt="Hero image"
+              className="h-full w-full object-cover object-top"
+            />
+          </div>
         </div>
         <div className="flex w-full items-center justify-center md:w-1/2">
-          <div className="w-full max-w-md rounded-lg p-8 shadow-sm">
+          <div className="w-full max-w-md rounded-lg p-8 pt-12 shadow-sm md:pt-8">
             <div className="mb-6">
-              <h1 className="text-center text-3xl font-bold">emmages</h1>
+              {/* <h1 className="text-center text-3xl font-bold">tana</h1> */}
+              <Logo className="h-20" />
               <h2 className="text-muted-foreground mb-6 text-center text-sm">
                 emma's file host lives here
               </h2>

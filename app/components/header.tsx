@@ -29,7 +29,7 @@ export function Header({
 
   return (
     <div
-      className={cn("sticky top-0 z-10 flex self-stretch p-4", className)}
+      className={cn("sticky top-0 z-30 flex self-stretch p-4", className)}
       {...props}
     >
       <div

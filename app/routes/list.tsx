@@ -15,8 +15,8 @@ const LOAD_BATCH_SIZE = 50;
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "File List - Emmages" },
-    { name: "description", content: "File management for Emmages!" },
+    { title: "File List - tana" },
+    { name: "description", content: "File management for tana!" },
   ];
 }
 

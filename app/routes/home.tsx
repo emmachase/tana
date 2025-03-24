@@ -13,7 +13,7 @@ import { Header } from "~/components/header";
 const LOAD_BATCH_SIZE = 200;
 
 export function meta({}: Route.MetaArgs) {
-  return [{ title: "Emmages - Gallery" }];
+  return [{ title: "tana - Gallery" }];
 }
 
 export const unstable_middleware: Route.unstable_MiddlewareFunction[] = [

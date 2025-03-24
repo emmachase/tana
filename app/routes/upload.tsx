@@ -13,8 +13,8 @@ import { X } from "lucide-react";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Upload - Emmages" },
-    { name: "description", content: "Upload images to Emmages" },
+    { title: "Upload - tana" },
+    { name: "description", content: "Upload images to tana" },
   ];
 }
 
@@ -200,7 +200,7 @@ export default function Upload() {
                 {selectedFile && (
                   <button
                     type="button"
-                    className="text-muted-foreground hover:text-foreground bg-background/80 hover:bg-background absolute top-2 right-2 z-10 rounded-full p-1 transition-colors"
+                    className="text-muted-foreground hover:text-foreground bg-background/80 hover:bg-background absolute top-2 right-2 rounded-full p-1 transition-colors"
                     onClick={(e) => {
                       e.stopPropagation();
                       clearFileSelection();
@@ -216,13 +216,13 @@ export default function Upload() {
                       <img
                         src={previewQuery.data}
                         alt="Preview"
-                        className="mb-4 max-h-[300px] rounded object-contain lg:max-h-[400px]"
+                        className="z-20 mb-4 max-h-[300px] rounded object-contain lg:max-h-[400px]"
                       />
                     ) : selectedFile?.type.startsWith("video/") ? (
                       <video
                         src={previewQuery.data}
                         controls
-                        className="mb-4 max-h-[300px] rounded object-contain lg:max-h-[400px]"
+                        className="z-20 mb-4 max-h-[300px] rounded object-contain lg:max-h-[400px]"
                       />
                     ) : null}
                     <p className="text-sm">{selectedFile?.name}</p>
