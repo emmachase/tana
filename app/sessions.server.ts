@@ -3,6 +3,7 @@ import { getSecret } from "./db/dao";
 
 type SessionData = {
   authed: boolean;
+  returnTo: string;
 };
 
 type SessionFlashData = {

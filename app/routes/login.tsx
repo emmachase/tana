@@ -20,14 +20,18 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  const session = await getSession();
+  const session = await getSession(request.headers.get("cookie"));
+
+  const location = session.get("returnTo") || "/";
   session.set("authed", true);
+  session.unset("returnTo");
+
   return new Response(JSON.stringify({ success: true }), {
     status: 302,
     headers: {
       "Content-Type": "application/json",
       "Set-Cookie": await commitSession(session),
-      Location: "/",
+      Location: location,
     },
   });
 }
