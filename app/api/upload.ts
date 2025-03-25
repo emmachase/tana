@@ -14,7 +14,7 @@ import { randomString36 } from "~/lib/crypto";
 
 function directoryDiscriminator() {
   const date = new Date();
-  return `./images/${date.getUTCFullYear()}-${date.getUTCMonth()}`;
+  return `images/${date.getUTCFullYear()}-${date.getUTCMonth()}`;
 }
 
 const RETRIES = 20;
@@ -81,13 +81,10 @@ export const upload = authedProcedure("upload")
     await mkdir(path.join(env.ROOT_DIR, directory), { recursive: true });
 
     // Save the file
-    const filePath = path.join(
-      env.ROOT_DIR,
-      directory,
-      `${await randomString36()}.${name}`,
-    );
+    const filePath = path.join(directory, `${await randomString36()}.${name}`);
 
-    const writeStream = createWriteStream(filePath);
+    const realFilePath = path.join(env.ROOT_DIR, filePath);
+    const writeStream = createWriteStream(realFilePath);
     Readable.fromWeb(file.stream() as ReadableStream<unknown>).pipe(
       writeStream,
     );
