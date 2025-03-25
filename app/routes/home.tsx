@@ -166,6 +166,7 @@ function Gallery(props: React.ComponentProps<"div">) {
       <div className="flex h-full items-center justify-center">
         <Card
           key={image.name ?? idx}
+          id={image.id}
           url={image.name}
           type={
             image.mime.startsWith("video")
@@ -196,6 +197,7 @@ function Gallery(props: React.ComponentProps<"div">) {
             className="flex items-center justify-center"
           >
             <Card
+              id={image.id}
               url={image.name}
               type={
                 image.mime.startsWith("video")

@@ -1,9 +1,13 @@
 import React, { type FC, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { motion, useAnimation } from "motion/react";
+import { AnimatePresence, motion, useAnimation } from "motion/react";
 import { disableScroll, enableScroll } from "~/lib/scroll";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "./ui/skeleton";
+import { Button } from "./ui/button";
+import { Download, Info, Share, X } from "lucide-react";
+import { Link } from "react-router";
+import { toast } from "sonner";
 
 const Backdrop: FC<{
   in: boolean;
@@ -26,6 +30,7 @@ export enum CardContentType {
 }
 
 export const Card: FC<{
+  id?: number;
   url?: string;
   type?: CardContentType;
   hide?: boolean;
@@ -34,6 +39,7 @@ export const Card: FC<{
   const [fullImageLoaded, setFullImageLoaded] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [actionBarVisible, setActionBarVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const thumbImageRef = useRef<HTMLImageElement & HTMLVideoElement>(null);
   const controls = useAnimation();
@@ -61,7 +67,9 @@ export const Card: FC<{
           (img as HTMLVideoElement).videoHeight;
 
     const maxWidth = windowWidth * 0.9;
-    const maxHeight = windowHeight * 0.9;
+    // Reserve space for action bar (60px height + some padding)
+    const actionBarHeight = 70;
+    const maxHeight = windowHeight * 0.9 - actionBarHeight;
     let targetWidth = maxWidth;
     let targetHeight = maxWidth / aspectRatio;
 
@@ -71,7 +79,7 @@ export const Card: FC<{
     }
 
     return {
-      top: (windowHeight - targetHeight) / 2,
+      top: (windowHeight - targetHeight - actionBarHeight) / 2,
       left: (windowWidth - targetWidth) / 2,
       width: targetWidth,
       height: targetHeight,
@@ -94,6 +102,16 @@ export const Card: FC<{
     }
     return () => enableScroll();
   }, [isExpanded, controls]);
+
+  // Show action bar when image is expanded (no delay)
+  useEffect(() => {
+    if (isExpanded && !isClosing) {
+      // Show immediately when expanded
+      setActionBarVisible(true);
+    } else if (!isExpanded || isClosing) {
+      setActionBarVisible(false);
+    }
+  }, [isExpanded, isClosing]);
 
   const onImageLoad = () => {
     setLoaded(true);
@@ -132,6 +150,7 @@ export const Card: FC<{
     if (!isExpanded) {
       setIsExpanded(true);
       setFullImageLoaded(false);
+      setActionBarVisible(false);
 
       if (cardRef.current) {
         // queueMicrotask(() => {
@@ -156,6 +175,8 @@ export const Card: FC<{
   const handleClose = () => {
     if (!cardRef.current) return;
     setIsClosing(true);
+    setActionBarVisible(false);
+
     const rect = cardRef.current.getBoundingClientRect();
     controls
       .start({
@@ -247,6 +268,79 @@ export const Card: FC<{
             >
               {renderContent(true)}
             </motion.div>
+            <AnimatePresence>
+              {actionBarVisible && (
+                <motion.div
+                  className="fixed bottom-0 left-0 z-[1001] flex w-full items-center justify-center gap-4 bg-black/80 py-4 backdrop-blur-sm"
+                  initial={{ opacity: 0, bottom: -60 }}
+                  animate={{ opacity: 1, bottom: 0 }}
+                  exit={{ opacity: 0, bottom: -60 }}
+                  transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:bg-white/20 sm:w-auto sm:px-4"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Handle download
+                      if (props.url) {
+                        window.open(props.url, "_blank");
+                      }
+                    }}
+                  >
+                    <Download className="h-5 w-5" />
+                    <span className="ml-2 hidden sm:inline">Download</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:bg-white/20 sm:w-auto sm:px-4"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Handle share
+                      if (props.url) {
+                        navigator.clipboard.writeText(props.url);
+                        toast.success("Link copied to clipboard");
+                      }
+                    }}
+                  >
+                    <Share className="h-5 w-5" />
+                    <span className="ml-2 hidden sm:inline">Share</span>
+                  </Button>
+                  <Link
+                    to={`/detail/${props.id}`}
+                    onClick={(e: React.MouseEvent) => {
+                      if (!props.url) {
+                        e.preventDefault();
+                      }
+                      e.stopPropagation();
+                    }}
+                  >
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-white hover:bg-white/20 sm:w-auto sm:px-4"
+                    >
+                      <Info className="h-5 w-5" />
+                      <span className="ml-2 hidden sm:inline">Details</span>
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:bg-white/20 sm:w-auto sm:px-4"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleClose();
+                    }}
+                  >
+                    <X className="h-5 w-5" />
+                    <span className="ml-2 hidden sm:inline">Close</span>
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </>,
           portalRoot,
         )}
