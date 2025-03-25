@@ -7,9 +7,11 @@ RUN corepack install
 FROM pnpm AS development-dependencies-env
 COPY . /app/
 RUN pnpm install --frozen-lockfile --ignore-scripts
+RUN pnpm rebuild argon2 better-sqlite3 sharp
 
 FROM pnpm AS production-dependencies-env
-RUN pnpm install --frozen-lockfile -P --ignore-scripts
+RUN pnpm install --frozen-lockfile --ignore-scripts -P
+RUN pnpm rebuild argon2 better-sqlite3 sharp
 
 FROM pnpm AS build-env
 COPY . /app/
