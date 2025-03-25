@@ -60,7 +60,7 @@ export const upload = authedProcedure("upload")
       uploadSchema,
     ),
   )
-  .mutation(async ({ input }) => {
+  .mutation(async ({ input, ctx }) => {
     const {
       file,
       name = await generateName(env.NAMING_TEMPLATE, path.extname(file.name)),
@@ -106,9 +106,13 @@ export const upload = authedProcedure("upload")
       db.insert(tagTable).values(tagValues).run();
     }
 
+    const reqUrl = new URL(ctx.req.url);
+    const origin = reqUrl.origin;
+    const url = `${origin}/${name}`;
+
     return {
       id: uploadRecord.id,
       name,
-      url: `/${name}`,
+      url,
     };
   });
