@@ -1,6 +1,6 @@
 import { authedProcedure, router } from "./trpc";
 import { db } from "~/db";
-import { upload } from "~/db/schema";
+import { tag, upload } from "~/db/schema";
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
 import { unlink } from "fs/promises";
@@ -59,6 +59,9 @@ export const fileOps = router({
         console.error("Error deleting file:", error);
         // Continue with database deletion even if file deletion fails
       }
+
+      // Delete existing tags
+      db.delete(tag).where(eq(tag.uploadId, id)).run();
 
       // Delete from database
       const deleted = db

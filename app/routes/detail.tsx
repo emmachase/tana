@@ -2,7 +2,7 @@ import type { Route } from "./+types/detail";
 import { useTRPC } from "~/lib/trpc";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "~/components/ui/button";
-import { Download, ArrowLeft, Edit } from "lucide-react";
+import { Download, ArrowLeft, Edit, Trash } from "lucide-react";
 import { useNavigate } from "react-router";
 import { Badge } from "~/components/ui/badge";
 import { prefetch } from "~/lib/prefetch";
@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogDescription,
+  DialogFooter,
 } from "~/components/ui/dialog";
 import {
   Drawer,
@@ -24,6 +25,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
   DrawerDescription,
+  DrawerFooter,
 } from "~/components/ui/drawer";
 import { useIsMobile } from "~/hooks/useSize";
 import { toast } from "sonner";
@@ -56,6 +58,7 @@ export default function Detail({ params }: Route.ComponentProps) {
   const [descriptionInput, setDescriptionInput] = useState("");
   const [tagInput, setTagInput] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const {
     data: fileDetails,
@@ -90,6 +93,19 @@ export default function Detail({ params }: Route.ComponentProps) {
     }),
   );
 
+  // Delete file mutation
+  const deleteMutation = useMutation(
+    trpc.fileOps.delete.mutationOptions({
+      onSuccess: () => {
+        toast.success("File deleted successfully");
+        navigate(-1);
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to delete file");
+      },
+    }),
+  );
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -104,6 +120,14 @@ export default function Detail({ params }: Route.ComponentProps) {
       name: nameInput,
       description: descriptionInput,
       tags,
+    });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!fileDetails) return;
+
+    deleteMutation.mutate({
+      id: fileDetails.id,
     });
   };
 
@@ -194,64 +218,166 @@ export default function Detail({ params }: Route.ComponentProps) {
 
         <h1 className="text-3xl font-bold">{fileDetails.name}</h1>
 
+        <div className="flex-1" />
+
         {isMobile ? (
-          <Drawer
-            open={isEditDialogOpen}
-            onOpenChange={(open) => {
-              setIsEditDialogOpen(open);
-              // Reset form state when drawer closes
-              if (!open) {
-                setNameInput("");
-                setDescriptionInput("");
-                setTagInput("");
-              }
-            }}
-          >
-            <DrawerTrigger asChild>
-              <Button variant="outline" size="icon" className="ml-auto">
-                <Edit className="size-4" />
-              </Button>
-            </DrawerTrigger>
-            <DrawerContent>
-              <DrawerHeader>
-                <DrawerTitle>Edit File Details</DrawerTitle>
-                <DrawerDescription>
-                  Edit the file details for {fileDetails.name}
-                </DrawerDescription>
-              </DrawerHeader>
-              <div className="px-4">
-                <EditFormContent />
-              </div>
-            </DrawerContent>
-          </Drawer>
+          <>
+            <Drawer
+              open={isEditDialogOpen}
+              onOpenChange={(open) => {
+                setIsEditDialogOpen(open);
+                // Reset form state when drawer closes
+                if (!open) {
+                  setNameInput("");
+                  setDescriptionInput("");
+                  setTagInput("");
+                }
+              }}
+            >
+              <DrawerTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Edit className="size-4" />
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent>
+                <DrawerHeader>
+                  <DrawerTitle>Edit File Details</DrawerTitle>
+                  <DrawerDescription>
+                    Edit the file details for {fileDetails.name}
+                  </DrawerDescription>
+                </DrawerHeader>
+                <div className="px-4">
+                  <EditFormContent />
+                </div>
+              </DrawerContent>
+            </Drawer>
+
+            <Button
+              variant="outline"
+              size="icon"
+              className="text-destructive"
+              onClick={() => setIsDeleteDialogOpen(true)}
+            >
+              <Trash className="size-4" />
+            </Button>
+
+            <Drawer
+              open={isDeleteDialogOpen}
+              onOpenChange={(open) => !open && setIsDeleteDialogOpen(false)}
+            >
+              <DrawerContent>
+                <DrawerHeader>
+                  <DrawerTitle>Delete File</DrawerTitle>
+                  <DrawerDescription asChild>
+                    <div>
+                      <p className="text-foreground text-base">
+                        Are you sure you want to delete {fileDetails?.name}?
+                      </p>
+                      <p className="text-muted-foreground mt-2 text-sm">
+                        This action cannot be undone.
+                      </p>
+                    </div>
+                  </DrawerDescription>
+                </DrawerHeader>
+                <DrawerFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsDeleteDialogOpen(false)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={handleDeleteConfirm}
+                    disabled={deleteMutation.isPending}
+                  >
+                    {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                  </Button>
+                </DrawerFooter>
+              </DrawerContent>
+            </Drawer>
+          </>
         ) : (
-          <Dialog
-            open={isEditDialogOpen}
-            onOpenChange={(open) => {
-              setIsEditDialogOpen(open);
-              // Reset form state when dialog closes
-              if (!open) {
-                setNameInput("");
-                setDescriptionInput("");
-                setTagInput("");
-              }
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button variant="outline" size="icon" className="ml-auto">
-                <Edit className="size-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Edit File Details</DialogTitle>
-                <DialogDescription>
-                  Edit the file details for {fileDetails.name}
-                </DialogDescription>
-              </DialogHeader>
-              <EditFormContent />
-            </DialogContent>
-          </Dialog>
+          <>
+            <Dialog
+              open={isEditDialogOpen}
+              onOpenChange={(open) => {
+                setIsEditDialogOpen(open);
+                // Reset form state when dialog closes
+                if (!open) {
+                  setNameInput("");
+                  setDescriptionInput("");
+                  setTagInput("");
+                }
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Edit className="size-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit File Details</DialogTitle>
+                  <DialogDescription>
+                    Edit the file details for {fileDetails.name}
+                  </DialogDescription>
+                </DialogHeader>
+                <EditFormContent />
+              </DialogContent>
+            </Dialog>
+
+            <Button
+              variant="outline"
+              size="icon"
+              className="text-destructive"
+              onClick={() => setIsDeleteDialogOpen(true)}
+            >
+              <Trash className="size-4" />
+            </Button>
+
+            <Dialog
+              open={isDeleteDialogOpen}
+              onOpenChange={(open) => !open && setIsDeleteDialogOpen(false)}
+            >
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete File</DialogTitle>
+                  <DialogDescription asChild>
+                    <div>
+                      <p className="text-foreground text-base">
+                        Are you sure you want to delete {fileDetails?.name}?
+                      </p>
+                      <p className="text-muted-foreground mt-2 text-sm">
+                        This action cannot be undone.
+                      </p>
+                    </div>
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsDeleteDialogOpen(false)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={handleDeleteConfirm}
+                    disabled={deleteMutation.isPending}
+                  >
+                    {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
         )}
       </div>
 
@@ -341,9 +467,9 @@ export default function Detail({ params }: Route.ComponentProps) {
               </p>
             </div>
 
-            <div className="pt-4">
+            <div className="flex gap-2 pt-4">
               <Button
-                className="w-full"
+                className="flex-1"
                 onClick={() => {
                   const link = document.createElement("a");
                   link.href = `/${fileDetails.name}`;
@@ -353,6 +479,14 @@ export default function Detail({ params }: Route.ComponentProps) {
               >
                 <Download className="mr-2 size-4" />
                 Download File
+              </Button>
+              <Button
+                className="flex-1"
+                variant="destructive"
+                onClick={() => setIsDeleteDialogOpen(true)}
+              >
+                <Trash className="mr-2 size-4" />
+                Delete File
               </Button>
             </div>
           </div>
