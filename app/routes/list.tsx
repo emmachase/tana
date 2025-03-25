@@ -127,6 +127,8 @@ export default function List() {
       ),
     );
 
+  const debouncedIsFetching = useDebounce(isFetching, 500);
+
   const flatData = data?.pages.flatMap((page) => page.items) ?? [];
 
   // Update lastSuccessfulData when we get new non-loading data
@@ -258,7 +260,7 @@ export default function List() {
                         key={file.id}
                         className={cn(
                           "hover:bg-muted/50 transition-colors",
-                          isFetching && "opacity-50",
+                          debouncedIsFetching && "opacity-50",
                         )}
                       >
                         <td className="w-12 px-6 py-4">
@@ -379,7 +381,7 @@ export default function List() {
                       colSpan={5}
                       className={cn(
                         "text-muted-foreground px-6 py-4 text-center",
-                        isFetching && "opacity-50",
+                        debouncedIsFetching && "opacity-50",
                       )}
                     >
                       No files found
@@ -390,7 +392,7 @@ export default function List() {
             </table>
 
             {/* Loading Overlay */}
-            {isFetching && (
+            {debouncedIsFetching && (
               <div className="bg-background/50 absolute inset-0 flex items-center justify-center" />
             )}
           </div>
@@ -406,8 +408,8 @@ export default function List() {
           <DrawerHeader>
             <DrawerTitle>{fileDetailsDrawer?.name}</DrawerTitle>
             {fileDetailsDrawer?.description && (
-              <DrawerDescription>
-                {fileDetailsDrawer.description}
+              <DrawerDescription asChild>
+                <div>{fileDetailsDrawer.description}</div>
               </DrawerDescription>
             )}
           </DrawerHeader>
@@ -524,13 +526,15 @@ export default function List() {
             <DrawerContent>
               <DrawerHeader>
                 <DrawerTitle>Delete File</DrawerTitle>
-                <DrawerDescription>
-                  <p className="text-foreground text-base">
-                    Are you sure you want to delete {deleteDialog?.name}?
-                  </p>
-                  <p className="text-muted-foreground mt-2 text-sm">
-                    This action cannot be undone.
-                  </p>
+                <DrawerDescription asChild>
+                  <div>
+                    <p className="text-foreground text-base">
+                      Are you sure you want to delete {deleteDialog?.name}?
+                    </p>
+                    <p className="text-muted-foreground mt-2 text-sm">
+                      This action cannot be undone.
+                    </p>
+                  </div>
                 </DrawerDescription>
               </DrawerHeader>
 
@@ -609,13 +613,15 @@ export default function List() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Delete File</DialogTitle>
-                <DialogDescription>
-                  <p className="text-foreground text-base">
-                    Are you sure you want to delete {deleteDialog?.name}?
-                  </p>
-                  <p className="text-muted-foreground mt-2 text-sm">
-                    This action cannot be undone.
-                  </p>
+                <DialogDescription asChild>
+                  <div>
+                    <p className="text-foreground text-base">
+                      Are you sure you want to delete {deleteDialog?.name}?
+                    </p>
+                    <p className="text-muted-foreground mt-2 text-sm">
+                      This action cannot be undone.
+                    </p>
+                  </div>
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
