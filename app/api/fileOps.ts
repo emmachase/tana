@@ -54,7 +54,7 @@ export const fileOps = router({
 
       // Delete the physical file
       try {
-        await unlink(join(env.ROOT_DIR, file.name));
+        await unlink(join(env.ROOT_DIR, file.filePath));
       } catch (error) {
         console.error("Error deleting file:", error);
         // Continue with database deletion even if file deletion fails
