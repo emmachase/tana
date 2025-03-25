@@ -46,7 +46,15 @@ const uploadSchema = v.object({
 async function parseFormData(input: FormData) {
   const object = {} as Record<string, unknown>;
   for (const [key, value] of input.entries()) {
-    object[key] = value;
+    if (key === "tags") {
+      // Handle tags as array - accumulate multiple entries with the same key
+      if (!object[key]) {
+        object[key] = [];
+      }
+      (object[key] as unknown[]).push(value);
+    } else {
+      object[key] = value;
+    }
   }
 
   return object;
