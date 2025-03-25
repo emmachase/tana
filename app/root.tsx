@@ -39,7 +39,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <Providers>{children}</Providers>
-        <ScrollRestoration />
+        <ScrollRestoration
+          getKey={(location) => {
+            return location.pathname === "/"
+              ? // home restores by pathname
+                location.pathname
+              : // everything else by location like the browser
+                location.key;
+          }}
+        />
         <Scripts />
       </body>
     </html>

@@ -3,12 +3,10 @@ import type { Route } from "./+types/home";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { prefetch } from "~/lib/prefetch";
 import { Card, CardContentType } from "~/components/card";
-import { useRef, useEffect } from "react";
-import { useWindowVirtualizer } from "@tanstack/react-virtual";
+import { useRef, useEffect, useLayoutEffect } from "react";
+import { useWindowVirtualizer, windowScroll } from "@tanstack/react-virtual";
 import { useIsMobile, useSize } from "~/hooks/useSize";
-import { useScrollState } from "~/hooks/useScrollState";
 import { cn } from "~/lib/utils";
-import { Header } from "~/components/header";
 
 const LOAD_BATCH_SIZE = 200;
 
@@ -57,9 +55,14 @@ function Gallery(props: React.ComponentProps<"div">) {
   const CARD_HEIGHT = isMobile ? SM_CARD_HEIGHT : LG_CARD_HEIGHT;
 
   const { data: initData } = useQuery(
-    trpc.list.init.queryOptions({
-      gallery: true,
-    }),
+    trpc.list.init.queryOptions(
+      {
+        gallery: true,
+      },
+      {
+        staleTime: 1000 * 60 * 5, // 5 minutes
+      },
+    ),
   );
 
   const { data, fetchNextPage, hasNextPage } = useInfiniteQuery(
@@ -73,6 +76,7 @@ function Gallery(props: React.ComponentProps<"div">) {
         getNextPageParam: (lastPage) => {
           return lastPage.nextCursor;
         },
+        staleTime: 1000 * 60 * 5, // 5 minutes
       },
     ),
   );
@@ -89,12 +93,31 @@ function Gallery(props: React.ComponentProps<"div">) {
           numColumns,
   );
 
+  useLayoutEffect(() => {
+    return () => {
+      sessionStorage.setItem("gallery-scroll", window.scrollY.toString());
+    };
+  }, []);
+
+  const initialScroll =
+    ("sessionStorage" in globalThis
+      ? JSON.parse(sessionStorage.getItem("gallery-scroll") ?? "0")
+      : undefined) ?? 0;
+
   // Create our virtualizer
   const rowVirtualizer = useWindowVirtualizer({
     count: rowCount,
-    // getScrollElement: () => parentRef.current,
     estimateSize: () => CARD_HEIGHT,
     overscan: 5,
+    initialOffset: initialScroll,
+    scrollToFn: (offset, options, virtualizer) => {
+      if (offset === 0) {
+        // On navigation, don't override scroll restoration
+        return;
+      }
+
+      return windowScroll(offset, options, virtualizer);
+    },
   });
 
   // Load more when we reach the threshold
@@ -165,6 +188,7 @@ function Gallery(props: React.ComponentProps<"div">) {
           LG_COLS_CLASS,
           LG_ROWS_CLASS,
         )}
+        style={{ height: 9999999 }}
       >
         {flatData.map((image, idx) => (
           <div
@@ -244,19 +268,5 @@ function Gallery(props: React.ComponentProps<"div">) {
 }
 
 export default function Home() {
-  const scrolled = useScrollState();
-
-  return (
-    <main className="py-0 sm:p-4">
-      <div className="">
-        <Header
-          className={cn(
-            "m-auto transition-[max-width]",
-            scrolled ? "max-w-full" : "max-w-[1000px]",
-          )}
-        />
-        <Gallery className="m-auto max-w-[1200px]" />
-      </div>
-    </main>
-  );
+  return <Gallery className="m-auto max-w-[1200px]" />;
 }

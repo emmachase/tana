@@ -7,8 +7,6 @@ import { Textarea } from "~/components/ui/textarea";
 import { useMutation, useQuery, skipToken } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { cn } from "~/lib/utils";
-import { useScrollState } from "~/hooks/useScrollState";
-import { Header } from "~/components/header";
 import { X } from "lucide-react";
 
 export function meta({}: Route.MetaArgs) {
@@ -21,7 +19,6 @@ export function meta({}: Route.MetaArgs) {
 export default function Upload() {
   const trpc = useTRPC();
   const navigate = useNavigate();
-  const scrolled = useScrollState();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
@@ -152,15 +149,8 @@ export default function Upload() {
   };
 
   return (
-    <main className="py-0 sm:p-4">
-      <div className="">
-        <Header
-          className={cn(
-            "m-auto transition-[max-width]",
-            scrolled ? "max-w-full" : "max-w-[1000px]",
-          )}
-        />
-
+    <div className="px-4">
+      <div>
         <div className="m-auto max-w-[1200px] p-4">
           <div className="mt-4 mb-8">
             <h1 className="text-3xl font-bold">Upload New Media</h1>
@@ -335,6 +325,6 @@ export default function Upload() {
           </form>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

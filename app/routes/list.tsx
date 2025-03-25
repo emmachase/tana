@@ -8,7 +8,6 @@ import {
 import { prefetch } from "~/lib/prefetch";
 import { useState, useEffect } from "react";
 import { cn } from "~/lib/utils";
-import { Header } from "~/components/header";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
@@ -21,7 +20,6 @@ import {
   Video,
   Image,
 } from "lucide-react";
-import { useScrollState } from "~/hooks/useScrollState";
 import { useDebounce } from "~/hooks/useDebounce";
 import { useIsMobile } from "~/hooks/useSize";
 import {
@@ -89,7 +87,6 @@ function formatDate(dateStr: string | number): string {
 export default function List() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const scrolled = useScrollState();
   const [inputQuery, setInputQuery] = useState("");
   const searchQuery = useDebounce(inputQuery, 200);
   const [renameDialog, setRenameDialog] = useState<{
@@ -213,15 +210,8 @@ export default function List() {
   };
 
   return (
-    <main className="py-0 sm:p-4">
+    <div className="px-4">
       <div>
-        <Header
-          className={cn(
-            "m-auto transition-[max-width]",
-            scrolled ? "max-w-full" : "max-w-[1000px]",
-          )}
-        />
-
         <div className="m-auto max-w-[1200px] p-4">
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="mb-6 flex gap-2">
@@ -663,6 +653,6 @@ export default function List() {
           </Button>
         </div>
       )}
-    </main>
+    </div>
   );
 }

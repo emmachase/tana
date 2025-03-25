@@ -1,6 +1,9 @@
 import { Outlet, redirect } from "react-router";
 import { commitSession, getSession } from "~/sessions.server";
 import type { Route } from "./+types/auth-layout";
+import { Header } from "~/components/header";
+import { useScrollState } from "~/hooks/useScrollState";
+import { cn } from "~/lib/utils";
 
 export const unstable_middleware: Route.unstable_MiddlewareFunction[] = [
   async ({ request }) => {
@@ -17,5 +20,19 @@ export const unstable_middleware: Route.unstable_MiddlewareFunction[] = [
 ];
 
 export default function Layout() {
-  return <Outlet />;
+  const scrolled = useScrollState();
+
+  return (
+    <main className="py-0 sm:px-4">
+      <div className="">
+        <Header
+          className={cn(
+            "m-auto transition-[max-width]",
+            scrolled ? "max-w-full" : "max-w-[1000px]",
+          )}
+        />
+        <Outlet />
+      </div>
+    </main>
+  );
 }

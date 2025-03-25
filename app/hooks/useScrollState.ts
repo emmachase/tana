@@ -1,9 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 
 import { useState } from "react";
 
 export function useScrollState() {
   const [scrolled, setScrolled] = useState(false);
+
+  useLayoutEffect(() => {
+    setScrolled(window.scrollY > 0);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 0);
