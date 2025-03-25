@@ -11,6 +11,7 @@ export default [
       index("routes/home.tsx"),
       route("/upload", "routes/upload.tsx"),
       route("/list", "routes/list.tsx"),
+      route("/detail/:object", "routes/detail.tsx"),
     ]),
     route("/login", "routes/login.tsx"),
     route("/logout", "routes/logout.tsx"),

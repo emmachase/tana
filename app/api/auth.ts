@@ -15,10 +15,15 @@ export const ListScope = v.object({
   type: v.literal("list"),
 });
 
+export const DetailScope = v.object({
+  type: v.literal("detail"),
+});
+
 export const AuthScopeSchema = v.variant("type", [
   DeleteScope,
   UploadScope,
   ListScope,
+  DetailScope,
 ]);
 
 export type AuthScope = v.InferOutput<typeof AuthScopeSchema>;
@@ -40,7 +45,12 @@ export async function decodeJWT(token: string): Promise<AuthScope[]> {
 }
 
 export function allScopes(): AuthScope[] {
-  return [{ type: "delete" }, { type: "upload" }, { type: "list" }];
+  return [
+    { type: "delete" },
+    { type: "upload" },
+    { type: "list" },
+    { type: "detail" },
+  ];
 }
 
 // export enum JWT_AUD {

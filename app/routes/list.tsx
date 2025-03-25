@@ -39,6 +39,7 @@ import {
   DrawerDescription,
 } from "~/components/ui/drawer";
 import { toast } from "sonner";
+import { Link } from "react-router";
 
 const LOAD_BATCH_SIZE = 50;
 
@@ -203,10 +204,6 @@ export default function List() {
     document.body.removeChild(link);
   };
 
-  const handleOpenFile = (name: string) => {
-    window.open(`/${name}`, "_blank");
-  };
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
   };
@@ -296,19 +293,12 @@ export default function List() {
                         <td className="w-full py-4 pr-6">
                           <div className="flex items-center gap-2">
                             <div className="min-w-0 flex-1 overflow-hidden">
-                              <a
-                                href={`/${file.name}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                              <Link
+                                to={`/detail/${file.id}`}
                                 className="text-primary block cursor-pointer overflow-hidden text-sm font-medium text-ellipsis whitespace-nowrap hover:underline"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  handleOpenFile(file.name);
-                                }}
-                                title={file.name}
                               >
                                 {file.name}
-                              </a>
+                              </Link>
                               {file.description && (
                                 <div
                                   className="text-muted-foreground overflow-hidden text-xs text-ellipsis whitespace-nowrap"
