@@ -198,14 +198,22 @@ export const Card: FC<{
 
   const renderContent = (isExpanded = false) => (
     <div className="relative h-full w-full overflow-hidden md:rounded-sm">
-      {props.type === CardContentType.VIDEO ? (
-        <video
-          {...(isExpanded ? expandedContentProps : contentProps)}
-          src={props.url + "#t=0.001"}
-          ref={!isExpanded ? thumbImageRef : null}
-          controls={isExpanded}
-          className="absolute top-0 left-0 h-full w-full object-cover select-none"
-        />
+      {props.type === CardContentType.VIDEO && isExpanded && !isClosing ? (
+        <>
+          <video
+            {...expandedContentProps}
+            src={props.url + "#t=0.001"}
+            autoPlay={true}
+            controls={true}
+            className="absolute top-0 left-0 h-full w-full object-cover select-none"
+          />
+          <img
+            {...contentProps}
+            ref={!isExpanded ? thumbImageRef : null}
+            className="absolute top-0 left-0 h-full w-full object-cover select-none"
+            style={{ display: fullImageLoaded ? "none" : "block" }}
+          />
+        </>
       ) : (
         <>
           <img
@@ -213,7 +221,7 @@ export const Card: FC<{
             ref={!isExpanded ? thumbImageRef : null}
             className="absolute top-0 left-0 h-full w-full object-cover select-none"
           />
-          {isExpanded && (
+          {isExpanded && props.type !== CardContentType.VIDEO && (
             <img
               {...expandedContentProps}
               className="absolute top-0 left-0 h-full w-full object-cover select-none"
