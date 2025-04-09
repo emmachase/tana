@@ -1,6 +1,7 @@
 FROM node:20-alpine AS pnpm
 COPY ./package.json pnpm-lock.yaml /app/
 WORKDIR /app
+RUN apk add --no-cache ffmpeg
 RUN corepack enable
 RUN corepack install
 
