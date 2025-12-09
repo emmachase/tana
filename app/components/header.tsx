@@ -20,6 +20,7 @@ export function Header({
     { label: "Gallery", href: "/" },
     { label: "List", href: "/list" },
     { label: "Upload", href: "/upload" },
+    { label: "Token", href: "/token" },
   ],
   ...props
 }: HeaderProps) {

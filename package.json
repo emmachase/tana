@@ -10,7 +10,8 @@
     "format": "prettier --write --ignore-unknown .",
     "lint": "eslint --fix",
     "prepare": "husky",
-    "favicon": "node scripts/convert-favicon.js"
+    "favicon": "node scripts/convert-favicon.js",
+    "hash-password": "node scripts/hash-password.js"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.6",
